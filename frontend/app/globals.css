@@ -1,0 +1,96 @@
+@import "tailwindcss";
+
+:root {
+  --background: #fcfdfe;
+  --foreground: #090d16;
+  --card-bg: #ffffff;
+  --card-border: #e2e8f0;
+  --card-hover-border: #cbd5e1;
+  --primary-accent: #4f46e5;
+  --primary-gradient-start: #4338ca;
+  --primary-gradient-end: #6366f1;
+  --teal-positive: #0d9488;
+  --teal-positive-bg: #f0fdfa;
+  --teal-positive-border: #99f6e4;
+  --coral-negative: #e11d48;
+  --coral-negative-bg: #fff1f2;
+  --coral-negative-border: #fecdd3;
+  --muted-text: #64748b;
+  --surface-subtle: #f8fafc;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #090d16;
+    --foreground: #f8fafc;
+    --card-bg: #0f172a;
+    --card-border: #1e293b;
+    --card-hover-border: #334155;
+    --primary-accent: #6366f1;
+    --primary-gradient-start: #4f46e5;
+    --primary-gradient-end: #818cf8;
+    --teal-positive: #14b8a6;
+    --teal-positive-bg: #042f2e;
+    --teal-positive-border: #115e59;
+    --coral-negative: #f43f5e;
+    --coral-negative-bg: #4c0519;
+    --coral-negative-border: #881337;
+    --muted-text: #94a3b8;
+    --surface-subtle: #0d1322;
+  }
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background-color: var(--background);
+  color: var(--foreground);
+  font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  overflow-x: hidden;
+}
+
+/* Glassmorphism card utility */
+.glass-card {
+  background: color-mix(in srgb, var(--card-bg) 85%, transparent);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--card-border);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.glass-card:hover {
+  border-color: var(--card-hover-border);
+}
+
+/* Subtle glow effect for AI focal elements */
+.ai-glow-indigo {
+  box-shadow: 0 0 50px -12px rgba(99, 102, 241, 0.2);
+}
+
+.ai-glow-emerald {
+  box-shadow: 0 0 40px -10px rgba(20, 184, 166, 0.2);
+}
+
+.ai-glow-rose {
+  box-shadow: 0 0 40px -10px rgba(244, 63, 94, 0.2);
+}
+
+/* Grid background pattern */
+.bg-grid-pattern {
+  background-size: 32px 32px;
+  background-image: 
+    linear-gradient(to right, rgba(148, 163, 184, 0.07) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(148, 163, 184, 0.07) 1px, transparent 1px);
+}
+
+/* Respect reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
