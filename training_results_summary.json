@@ -1,0 +1,65 @@
+{
+  "tfidf": {
+    "accuracy": 0.8130733944954128,
+    "precision": 0.7933194154488518,
+    "recall": 0.8558558558558559,
+    "f1": 0.8234019501625135
+  },
+  "bert": {
+    "accuracy": 0.9288990825688074,
+    "precision": 0.9244444444444444,
+    "recall": 0.9369369369369369,
+    "f1": 0.930648769574944
+  },
+  "classification_report": "              precision    recall  f1-score   support\n\nNegative (0)     0.9336    0.9206    0.9271       428\nPositive (1)     0.9244    0.9369    0.9306       444\n\n    accuracy                         0.9289       872\n   macro avg     0.9290    0.9287    0.9289       872\nweighted avg     0.9290    0.9289    0.9289       872\n",
+  "confusion_matrix": [
+    [
+      394,
+      34
+    ],
+    [
+      28,
+      416
+    ]
+  ],
+  "inference": [
+    {
+      "text": "The support team solved my problem quickly.",
+      "sentiment": "POSITIVE",
+      "confidence": 0.7768619060516357,
+      "probs": [
+        0.22313809394836426,
+        0.7768619060516357
+      ]
+    },
+    {
+      "text": "The issue was never fixed and the service was terrible.",
+      "sentiment": "NEGATIVE",
+      "confidence": 0.9968975782394409,
+      "probs": [
+        0.9968975782394409,
+        0.0031024152413010597
+      ]
+    },
+    {
+      "text": "I appreciate the prompt resolution, exceptional customer care!",
+      "sentiment": "POSITIVE",
+      "confidence": 0.9991869330406189,
+      "probs": [
+        0.0008130993228405714,
+        0.9991869330406189
+      ]
+    },
+    {
+      "text": "My ticket was closed without any explanation or refund.",
+      "sentiment": "NEGATIVE",
+      "confidence": 0.9764921069145203,
+      "probs": [
+        0.9764921069145203,
+        0.02350790426135063
+      ]
+    }
+  ],
+  "device": "NVIDIA GeForce RTX 2050",
+  "pytorch_version": "2.6.0+cu124"
+}
