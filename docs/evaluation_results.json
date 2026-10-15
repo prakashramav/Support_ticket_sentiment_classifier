@@ -1,0 +1,375 @@
+{
+  "timestamp": "2026-10-15 21:14:19",
+  "hardware": {
+    "device_name": "NVIDIA GeForce RTX 2050",
+    "cuda_available": true,
+    "pytorch_version": "2.6.0+cu124"
+  },
+  "dataset": {
+    "name": "GLUE SST-2",
+    "split": "validation",
+    "num_samples": 872,
+    "label_distribution": {
+      "positive_1": 444,
+      "negative_0": 428
+    }
+  },
+  "models": {
+    "bert": {
+      "model_name": "BERT Fine-Tuned (bert-base-uncased)",
+      "sample_count": 872,
+      "accuracy": 0.9288990825688074,
+      "precision": 0.9244444444444444,
+      "recall": 0.9369369369369369,
+      "f1_score": 0.930648769574944,
+      "specificity": 0.9205607476635514,
+      "negative_predictive_value": 0.933649289099526,
+      "false_positive_rate": 0.0794392523364486,
+      "false_negative_rate": 0.06306306306306306,
+      "confusion_matrix": {
+        "matrix": [
+          [
+            394,
+            34
+          ],
+          [
+            28,
+            416
+          ]
+        ],
+        "true_negatives": 394,
+        "false_positives": 34,
+        "false_negatives": 28,
+        "true_positives": 416
+      },
+      "classification_report": {
+        "Negative (0)": {
+          "precision": 0.933649289099526,
+          "recall": 0.9205607476635514,
+          "f1-score": 0.9270588235294117,
+          "support": 428.0
+        },
+        "Positive (1)": {
+          "precision": 0.9244444444444444,
+          "recall": 0.9369369369369369,
+          "f1-score": 0.930648769574944,
+          "support": 444.0
+        },
+        "accuracy": 0.9288990825688074,
+        "macro avg": {
+          "precision": 0.9290468667719852,
+          "recall": 0.9287488423002441,
+          "f1-score": 0.9288537965521779,
+          "support": 872.0
+        },
+        "weighted avg": {
+          "precision": 0.9289624186558836,
+          "recall": 0.9288990825688074,
+          "f1-score": 0.9288867318369992,
+          "support": 872.0
+        }
+      }
+    },
+    "tfidf": {
+      "model_name": "TF-IDF + Logistic Regression",
+      "sample_count": 872,
+      "accuracy": 0.8130733944954128,
+      "precision": 0.7933194154488518,
+      "recall": 0.8558558558558559,
+      "f1_score": 0.8234019501625135,
+      "specificity": 0.7686915887850467,
+      "negative_predictive_value": 0.8371501272264631,
+      "false_positive_rate": 0.23130841121495327,
+      "false_negative_rate": 0.14414414414414414,
+      "confusion_matrix": {
+        "matrix": [
+          [
+            329,
+            99
+          ],
+          [
+            64,
+            380
+          ]
+        ],
+        "true_negatives": 329,
+        "false_positives": 99,
+        "false_negatives": 64,
+        "true_positives": 380
+      },
+      "classification_report": {
+        "Negative (0)": {
+          "precision": 0.8371501272264631,
+          "recall": 0.7686915887850467,
+          "f1-score": 0.8014616321559074,
+          "support": 428.0
+        },
+        "Positive (1)": {
+          "precision": 0.7933194154488518,
+          "recall": 0.8558558558558559,
+          "f1-score": 0.8234019501625135,
+          "support": 444.0
+        },
+        "accuracy": 0.8130733944954128,
+        "macro avg": {
+          "precision": 0.8152347713376574,
+          "recall": 0.8122737223204513,
+          "f1-score": 0.8124317911592105,
+          "support": 872.0
+        },
+        "weighted avg": {
+          "precision": 0.8148326547158445,
+          "recall": 0.8130733944954128,
+          "f1-score": 0.8126330784803719,
+          "support": 872.0
+        }
+      }
+    }
+  },
+  "statistical_test": {
+    "contingency_table": {
+      "both_correct": 681,
+      "bert_correct_tfidf_incorrect": 129,
+      "tfidf_correct_bert_incorrect": 28,
+      "both_incorrect": 34,
+      "total_samples": 872
+    },
+    "chi2_statistic": 63.69426751592356,
+    "p_value": 1.4530680172805404e-15,
+    "is_significant_p001": true,
+    "is_significant_p05": true
+  },
+  "inference_latency": {
+    "tfidf_cpu": {
+      "device": "CPU",
+      "single_sample_latency_ms": {
+        "mean": 0.7323205011198297,
+        "median": 0.6712000031257048,
+        "std": 0.19990179792623175,
+        "p95": 1.0192400150117462,
+        "p99": 1.6847749907174108,
+        "min": 0.6173999863676727,
+        "max": 2.120100019965321
+      },
+      "single_stream_throughput_samples_per_sec": 1365.5223341021417,
+      "batch_inference": {
+        "total_samples": 872,
+        "total_time_seconds": 0.01970259999507107,
+        "throughput_samples_per_sec": 44258.118228972075
+      }
+    },
+    "bert_gpu": {
+      "device": "CUDA",
+      "single_sample_latency_ms": {
+        "mean": 11.5857595000125,
+        "median": 9.873549992335029,
+        "std": 7.392077237834869,
+        "p95": 14.959430000453718,
+        "p99": 24.77638401294776,
+        "min": 9.016800002427772,
+        "max": 84.66289998614229
+      },
+      "single_stream_throughput_samples_per_sec": 86.31285674443018,
+      "batch_inference": {
+        "batch_size": 32,
+        "total_samples": 872,
+        "total_time_seconds": 4.565675399993779,
+        "throughput_samples_per_sec": 190.99036256523803
+      }
+    },
+    "bert_cpu": {
+      "device": "CPU",
+      "single_sample_latency_ms": {
+        "mean": 41.96428000344895,
+        "median": 42.3882000031881,
+        "std": 5.805993011613942,
+        "p95": 50.196019996656105,
+        "p99": 52.72649600985459,
+        "min": 31.252399989170954,
+        "max": 53.51600001449697
+      },
+      "single_stream_throughput_samples_per_sec": 23.829790476991676,
+      "batch_inference": {
+        "batch_size": 32,
+        "total_samples": 872,
+        "total_time_seconds": 24.333178200002294,
+        "throughput_samples_per_sec": 35.8358449041366
+      }
+    },
+    "model_loading_times_ms": {
+      "tfidf_pipeline": 41.8643000011798,
+      "bert_gpu": 1931.3940000138246,
+      "bert_cpu": 300.0
+    }
+  },
+  "error_analysis_samples": {
+    "bert_correct_tfidf_incorrect": [
+      {
+        "index": 11,
+        "sentence": "it takes a strange kind of laziness to waste the talents of robert forster , anne meara , eugene levy , and reginald veljohnson all in the same movie . ",
+        "ground_truth": "NEGATIVE (0)",
+        "bert_prediction": "NEGATIVE (0)",
+        "bert_confidence": 0.9967768788337708,
+        "tfidf_prediction": "POSITIVE (1)",
+        "tfidf_confidence": 0.5306508116519695
+      },
+      {
+        "index": 19,
+        "sentence": "in its best moments , resembles a bad high school production of grease , without benefit of song . ",
+        "ground_truth": "NEGATIVE (0)",
+        "bert_prediction": "NEGATIVE (0)",
+        "bert_confidence": 0.9974662065505981,
+        "tfidf_prediction": "POSITIVE (1)",
+        "tfidf_confidence": 0.7209386998076346
+      },
+      {
+        "index": 20,
+        "sentence": "pumpkin takes an admirable look at the hypocrisy of political correctness , but it does so with such an uneven tone that you never know when humor ends and tragedy begins . ",
+        "ground_truth": "NEGATIVE (0)",
+        "bert_prediction": "NEGATIVE (0)",
+        "bert_confidence": 0.9906090497970581,
+        "tfidf_prediction": "POSITIVE (1)",
+        "tfidf_confidence": 0.6271544942906074
+      },
+      {
+        "index": 28,
+        "sentence": "it 's a cookie-cutter movie , a cut-and-paste job . ",
+        "ground_truth": "NEGATIVE (0)",
+        "bert_prediction": "NEGATIVE (0)",
+        "bert_confidence": 0.9953613877296448,
+        "tfidf_prediction": "POSITIVE (1)",
+        "tfidf_confidence": 0.6785895166324716
+      },
+      {
+        "index": 31,
+        "sentence": "... designed to provide a mix of smiles and tears , `` crossroads '' instead provokes a handful of unintentional howlers and numerous yawns . ",
+        "ground_truth": "NEGATIVE (0)",
+        "bert_prediction": "NEGATIVE (0)",
+        "bert_confidence": 0.9932225942611694,
+        "tfidf_prediction": "POSITIVE (1)",
+        "tfidf_confidence": 0.5409789017861047
+      },
+      {
+        "index": 37,
+        "sentence": "( w ) hile long on amiable monkeys and worthy environmentalism , jane goodall 's wild chimpanzees is short on the thrills the oversize medium demands . ",
+        "ground_truth": "NEGATIVE (0)",
+        "bert_prediction": "NEGATIVE (0)",
+        "bert_confidence": 0.991070032119751,
+        "tfidf_prediction": "POSITIVE (1)",
+        "tfidf_confidence": 0.6255713856741444
+      }
+    ],
+    "tfidf_correct_bert_incorrect": [
+      {
+        "index": 13,
+        "sentence": "we root for ( clara and paul ) , even like them , though perhaps it 's an emotion closer to pity . ",
+        "ground_truth": "POSITIVE (1)",
+        "bert_prediction": "NEGATIVE (0)",
+        "bert_confidence": 0.5601300001144409,
+        "tfidf_prediction": "POSITIVE (1)",
+        "tfidf_confidence": 0.5380547382465404
+      },
+      {
+        "index": 22,
+        "sentence": "holden caulfield did it better . ",
+        "ground_truth": "NEGATIVE (0)",
+        "bert_prediction": "POSITIVE (1)",
+        "bert_confidence": 0.6452834606170654,
+        "tfidf_prediction": "NEGATIVE (0)",
+        "tfidf_confidence": 0.6166690000565881
+      },
+      {
+        "index": 46,
+        "sentence": "a synthesis of cliches and absurdities that seems positively decadent in its cinematic flash and emptiness . ",
+        "ground_truth": "NEGATIVE (0)",
+        "bert_prediction": "POSITIVE (1)",
+        "bert_confidence": 0.9806979894638062,
+        "tfidf_prediction": "NEGATIVE (0)",
+        "tfidf_confidence": 0.8866498358151517
+      },
+      {
+        "index": 69,
+        "sentence": "this one is definitely one to skip , even for horror movie fanatics . ",
+        "ground_truth": "NEGATIVE (0)",
+        "bert_prediction": "POSITIVE (1)",
+        "bert_confidence": 0.9138869643211365,
+        "tfidf_prediction": "NEGATIVE (0)",
+        "tfidf_confidence": 0.5136015633587672
+      },
+      {
+        "index": 115,
+        "sentence": "sam mendes has become valedictorian at the school for soft landings and easy ways out . ",
+        "ground_truth": "NEGATIVE (0)",
+        "bert_prediction": "POSITIVE (1)",
+        "bert_confidence": 0.9612654447555542,
+        "tfidf_prediction": "NEGATIVE (0)",
+        "tfidf_confidence": 0.6358459613662495
+      },
+      {
+        "index": 142,
+        "sentence": "what better message than ` love thyself ' could young women of any size receive ? ",
+        "ground_truth": "POSITIVE (1)",
+        "bert_prediction": "NEGATIVE (0)",
+        "bert_confidence": 0.966109037399292,
+        "tfidf_prediction": "POSITIVE (1)",
+        "tfidf_confidence": 0.6520077369007838
+      }
+    ],
+    "both_models_incorrect": [
+      {
+        "index": 83,
+        "sentence": "though it 's become almost redundant to say so , major kudos go to leigh for actually casting people who look working-class . ",
+        "ground_truth": "POSITIVE (1)",
+        "bert_prediction": "NEGATIVE (0)",
+        "bert_confidence": 0.8106116056442261,
+        "tfidf_prediction": "NEGATIVE (0)",
+        "tfidf_confidence": 0.5785497085405678
+      },
+      {
+        "index": 92,
+        "sentence": "you wo n't like roger , but you will quickly recognize him . ",
+        "ground_truth": "NEGATIVE (0)",
+        "bert_prediction": "POSITIVE (1)",
+        "bert_confidence": 0.973238468170166,
+        "tfidf_prediction": "POSITIVE (1)",
+        "tfidf_confidence": 0.7180632061132582
+      },
+      {
+        "index": 95,
+        "sentence": "this riveting world war ii moral suspense story deals with the shadow side of american culture : racial prejudice in its ugly and diverse forms . ",
+        "ground_truth": "NEGATIVE (0)",
+        "bert_prediction": "POSITIVE (1)",
+        "bert_confidence": 0.9965260624885559,
+        "tfidf_prediction": "POSITIVE (1)",
+        "tfidf_confidence": 0.6867305188972861
+      },
+      {
+        "index": 112,
+        "sentence": "hilariously inept and ridiculous . ",
+        "ground_truth": "POSITIVE (1)",
+        "bert_prediction": "NEGATIVE (0)",
+        "bert_confidence": 0.9840196371078491,
+        "tfidf_prediction": "NEGATIVE (0)",
+        "tfidf_confidence": 0.8688146389903071
+      },
+      {
+        "index": 118,
+        "sentence": "every nanosecond of the the new guy reminds you that you could be doing something else far more pleasurable . ",
+        "ground_truth": "NEGATIVE (0)",
+        "bert_prediction": "POSITIVE (1)",
+        "bert_confidence": 0.9791529774665833,
+        "tfidf_prediction": "POSITIVE (1)",
+        "tfidf_confidence": 0.7296908462928704
+      },
+      {
+        "index": 121,
+        "sentence": "it seems to me the film is about the art of ripping people off without ever letting them consciously know you have done so ",
+        "ground_truth": "NEGATIVE (0)",
+        "bert_prediction": "POSITIVE (1)",
+        "bert_confidence": 0.9349915981292725,
+        "tfidf_prediction": "POSITIVE (1)",
+        "tfidf_confidence": 0.6181968016135279
+      }
+    ]
+  }
+}
