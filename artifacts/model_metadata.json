@@ -1,0 +1,145 @@
+{
+  "project_name": "Support-Ticket Sentiment Classifier",
+  "dataset": {
+    "name": "GLUE SST-2 (Stanford Sentiment Treebank)",
+    "description": "Binary sentiment sequence classification benchmark",
+    "validation_samples": 872,
+    "train_samples": 67349,
+    "label_distribution": {
+      "validation_positive_1": 444,
+      "validation_negative_0": 428
+    }
+  },
+  "save_date": "2026-10-15",
+  "version": "1.0.0",
+  "git": {
+    "commit": "88d097fd529519af8085654fdd6247d4cea12143",
+    "branch": "feat/model-comparison-report"
+  },
+  "environment": {
+    "python_version": "3.11.9",
+    "pytorch_version": "2.6.0+cu124",
+    "cuda_available": true,
+    "gpu_device": "NVIDIA GeForce RTX 2050",
+    "libraries": {
+      "torch": "2.6.0+cu124",
+      "transformers": "5.17.0",
+      "scikit-learn": "1.9.1",
+      "datasets": "5.0.1",
+      "joblib": "1.4.2",
+      "scipy": "1.17.1",
+      "fastapi": "0.115.11"
+    }
+  },
+  "models": {
+    "bert": {
+      "model_type": "transformer",
+      "architecture": "BertForSequenceClassification",
+      "base_pretrained_model": "bert-base-uncased",
+      "total_parameters": 109483778,
+      "hidden_size": 768,
+      "num_hidden_layers": 12,
+      "num_attention_heads": 12,
+      "max_position_embeddings": 512,
+      "max_sequence_length_inference": 128,
+      "label_mapping": {
+        "id2label": {
+          "0": "NEGATIVE",
+          "1": "POSITIVE"
+        },
+        "label2id": {
+          "NEGATIVE": 0,
+          "POSITIVE": 1
+        }
+      },
+      "artifact_paths": {
+        "directory": "artifacts/bert",
+        "model_weights": "artifacts/bert/model.safetensors",
+        "config": "artifacts/bert/config.json",
+        "tokenizer_config": "artifacts/bert/tokenizer_config.json",
+        "tokenizer_file": "artifacts/bert/tokenizer.json"
+      },
+      "training_hyperparameters": {
+        "epochs": 1,
+        "learning_rate": 2e-05,
+        "per_device_train_batch_size": 16,
+        "weight_decay": 0.01,
+        "fp16": true,
+        "seed": 42,
+        "optimizer": "AdamW"
+      },
+      "evaluation_metrics": {
+        "dataset_split": "GLUE SST-2 validation",
+        "sample_count": 872,
+        "accuracy": 0.9288990825688074,
+        "precision": 0.9244444444444444,
+        "recall": 0.9369369369369369,
+        "f1_score": 0.930648769574944,
+        "specificity": 0.9205607476635514,
+        "negative_predictive_value": 0.933649289099526,
+        "false_positive_rate": 0.0794392523364486,
+        "false_negative_rate": 0.06306306306306306,
+        "confusion_matrix": {
+          "true_negatives": 394,
+          "false_positives": 34,
+          "false_negatives": 28,
+          "true_positives": 416
+        },
+        "single_sample_latency_ms": {
+          "gpu_mean": 11.5857595,
+          "gpu_p95": 14.95943,
+          "cpu_mean": 41.96428,
+          "cpu_p95": 50.19602
+        }
+      }
+    },
+    "tfidf": {
+      "model_type": "classical_ml",
+      "architecture": "Pipeline(TfidfVectorizer -> LogisticRegression)",
+      "vectorizer_config": {
+        "ngram_range": [1, 2],
+        "max_features": 10000,
+        "sublinear_tf": false,
+        "norm": "l2"
+      },
+      "classifier_config": {
+        "solver": "lbfgs",
+        "C": 1.0,
+        "max_iter": 1000,
+        "random_state": 42
+      },
+      "label_mapping": {
+        "0": "NEGATIVE",
+        "1": "POSITIVE"
+      },
+      "artifact_paths": {
+        "directory": "artifacts/tfidf",
+        "pipeline_file": "artifacts/tfidf/tfidf_logistic_regression.joblib"
+      },
+      "security_notice": "joblib serialization contains Python pickle bytes. Only load from trusted repositories.",
+      "evaluation_metrics": {
+        "dataset_split": "GLUE SST-2 validation",
+        "sample_count": 872,
+        "accuracy": 0.8130733944954128,
+        "precision": 0.7933194154488518,
+        "recall": 0.8558558558558559,
+        "f1_score": 0.8234019501625135,
+        "specificity": 0.7686915887850467,
+        "negative_predictive_value": 0.8371501272264631,
+        "false_positive_rate": 0.23130841121495327,
+        "false_negative_rate": 0.14414414414414414,
+        "confusion_matrix": {
+          "true_negatives": 329,
+          "false_positives": 99,
+          "false_negatives": 64,
+          "true_positives": 380
+        },
+        "single_sample_latency_ms": {
+          "cpu_mean": 0.73232,
+          "cpu_p95": 1.01924
+        },
+        "single_stream_throughput_samples_per_sec": 1365.52
+      }
+    }
+  }
+}
