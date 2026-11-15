@@ -322,7 +322,7 @@ npm run dev
 
 ## Author & Version Information
 
-- **Author:** Arjun Rathod
+- **Author:** Prakash Ramavath
 - **Repository:** [`prakashramav/Support_ticket_sentiment_classifier`](https://github.com/prakashramav/Support_ticket_sentiment_classifier)
 - **Active Feature Branch:** `feat/save-trained-models`
 - **Evaluation Report:** [`docs/model_comparison_report.md`](docs/model_comparison_report.md)
