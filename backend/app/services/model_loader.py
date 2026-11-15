@@ -231,6 +231,7 @@ class ModelService:
         tokens = [t for t in clean_text.split() if t][:16]
 
         return {
+            "text": clean_text,
             "sentiment": sentiment,
             "confidence": round(confidence, 4),
             "confidencePercentage": int(round(confidence * 100)),
@@ -270,6 +271,7 @@ class ModelService:
         tokens = [t for t in clean_text.split() if t][:16]
 
         return {
+            "text": clean_text,
             "sentiment": sentiment,
             "confidence": round(confidence, 4),
             "confidencePercentage": int(round(confidence * 100)),

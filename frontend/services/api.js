@@ -53,7 +53,7 @@ function localSentimentInference(text, model = "bert") {
     sentiment: isPositive ? "POSITIVE" : "NEGATIVE",
     confidence: Number((confidence / 100).toFixed(2)),
     confidencePercentage: confidence,
-    model: model === "bert" ? "BERT (bert-sst2-v1)" : "TF-IDF + Linear SVM",
+    model: model === "bert" ? "BERT Fine-Tuned (bert-base-uncased)" : "TF-IDF + Logistic Regression",
     modelKey: model,
     source: "local-simulation",
     latencyMs: model === "bert" ? 42 : 8,

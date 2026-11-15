@@ -104,7 +104,7 @@ export default function ComparisonSection() {
                 </div>
                 <div>
                   <h3 className="text-xl font-bold text-slate-900 dark:text-white">
-                    TF-IDF + Linear SVM
+                    TF-IDF + Logistic Regression
                   </h3>
                   <span className="text-xs text-slate-500 dark:text-slate-400 font-mono">
                     scikit-learn baseline pipeline

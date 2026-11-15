@@ -28,7 +28,7 @@ export default function ModelPage() {
   ];
 
   const baselineSpecs = [
-    { label: "Baseline Model", value: "Linear Support Vector Machine (LinearSVC via scikit-learn)" },
+    { label: "Baseline Model", value: "TF-IDF + Logistic Regression (L2 Regularization via scikit-learn)" },
     { label: "Feature Extraction", value: "TF-IDF Vectorizer (Term Frequency × Inverse Document Frequency)" },
     { label: "N-gram Range", value: "(1, 2) Unigrams & Bigrams" },
     { label: "Max Features", value: "10,000 vocabulary features" },
@@ -119,7 +119,7 @@ export default function ModelPage() {
               </div>
               <div>
                 <h2 className="text-lg font-bold text-slate-900 dark:text-white">
-                  TF-IDF + Linear SVM Baseline
+                  TF-IDF + Logistic Regression Baseline
                 </h2>
                 <span className="text-xs text-slate-500 dark:text-slate-400 font-mono">
                   Classical Benchmark Pipeline
