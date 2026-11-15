@@ -41,7 +41,7 @@ export default function AboutPage() {
           </h1>
           <p className="mt-1 text-sm text-slate-600 dark:text-slate-300 max-w-3xl">
             An academic, educational decision-support web application designed to demonstrate
-            the differences between state-of-the-art Transformer models (BERT) and classical NLP baselines (TF-IDF + Linear SVM).
+            the differences between state-of-the-art Transformer models (BERT) and classical NLP baselines (TF-IDF + Logistic Regression).
           </p>
         </div>
 
@@ -157,7 +157,7 @@ export default function AboutPage() {
               <span className="font-bold text-slate-900 dark:text-white text-sm block mb-1">
                 3. Model Layer
               </span>
-              <p>Hugging Face Transformers (BERT-base-uncased) and scikit-learn (TF-IDF + LinearSVC) with standardized SST-2 GLUE benchmark validation.</p>
+              <p>Hugging Face Transformers (BERT-base-uncased) and scikit-learn (TF-IDF + Logistic Regression) with standardized SST-2 GLUE benchmark validation.</p>
             </div>
           </div>
 

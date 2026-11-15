@@ -26,7 +26,7 @@ export default function LiveAnalyzerSection() {
     sentiment: "POSITIVE",
     confidence: 0.94,
     confidencePercentage: 94,
-    model: "BERT (bert-sst2-v1)",
+    model: "BERT Fine-Tuned (bert-base-uncased)",
     modelKey: "bert",
   });
   const [comparisonResult, setComparisonResult] = useState(null);

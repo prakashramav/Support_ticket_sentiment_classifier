@@ -38,7 +38,7 @@ export default function AnalyzePage() {
       sentiment: "POSITIVE",
       confidence: 0.89,
       confidencePercentage: 89,
-      model: "TF-IDF + Linear SVM",
+      model: "TF-IDF + Logistic Regression",
       latencyMs: 6,
       tokens: ["happy", "service", "support", "team", "solved", "problem", "quickly"],
     },

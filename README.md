@@ -172,7 +172,27 @@ python training/verify_saved_models.py
 
 The script evaluates boundary conditions on sample sentences, confirms `model.eval()` mode, measures inference latency, checks probability normalizations ($P \in [0, 1]$), and exits with code `0` on success.
 
-### 3. How the FastAPI Backend Loads Artifacts
+### 3. System Architecture & End-to-End Flow
+
+```mermaid
+flowchart TD
+    User([User / Browser]) -->|HTTP / JSON| Frontend["Next.js 14 Frontend\n(React UI, Tailwind CSS, Axios)"]
+    Frontend -->|POST /api/v1/predict| FastAPI["FastAPI Inference Server\n(Uvicorn, Pydantic v2, CORS)"]
+    FastAPI -->|Request Routing| ModelLoader["Model Loader Service\n(Singleton Memory Manager)"]
+    
+    subgraph Models["Model Inference Layer"]
+        ModelLoader -->|Text Tokens| TFIDF["TF-IDF + Logistic Regression\n(10,000 n-gram features, CPU)"]
+        ModelLoader -->|PyTorch Tensors| BERT["BERT Sequence Classifier\n(bert-base-uncased, CUDA / GPU)"]
+    end
+    
+    TFIDF -->|Probs & Latency| ResponseBuilder["Prediction Response\n(Sentiment, Confidence, Probs, Latency)"]
+    BERT -->|Probs & Latency| ResponseBuilder
+    ResponseBuilder -->|JSON Response| FastAPI
+    FastAPI -->|JSON Payload| Frontend
+    Frontend -->|Rendered View| User
+```
+
+### 4. How the FastAPI Backend Loads Artifacts
 
 The FastAPI backend uses the singleton loader in [`backend/app/services/model_loader.py`](backend/app/services/model_loader.py):
 - **Startup Singleton:** Models are loaded into memory once during application startup, preventing disk I/O bottlenecks during live requests.
@@ -242,13 +262,23 @@ pip install torch --index-url https://download.pytorch.org/whl/cu124
 python training/verify_saved_models.py
 ```
 
-### 4. Rerun Comparative Benchmarking & Generate Figures
+### 4. Rerun Comparative Benchmarking & Evaluation
 
 ```bash
+# Full 14-section benchmark & figure generation
 python training/compare_models.py
+
+# Quick SST-2 evaluation CLI runner
+python evaluation/evaluate.py --split validation --models bert,tfidf
 ```
 
-### 5. Run Backend Server (FastAPI)
+### 5. Run Automated Test Suite
+
+```bash
+python tests/run_all_tests.py
+```
+
+### 6. Run Backend Server (FastAPI)
 
 ```bash
 # Windows PowerShell
@@ -261,7 +291,7 @@ uvicorn backend.main:app --reload --port 8000
 - Health Endpoint: [http://127.0.0.1:8000/api/v1/health](http://127.0.0.1:8000/api/v1/health)
 - Interactive Swagger Docs: [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)
 
-### 6. Run Frontend Dashboard (Next.js)
+### 7. Run Frontend Dashboard (Next.js)
 
 ```bash
 cd frontend
