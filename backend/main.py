@@ -63,14 +63,35 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# Allow requests from frontend development and production origins
+# Allow requests from frontend development, Vercel deployments, and external clients
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://127.0.0.1:3000", "*"],
+    allow_origins=[
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+        "*"
+    ],
+    allow_origin_regex=r"https://.*\.vercel\.app",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+@app.get("/")
+def read_root():
+    """Root endpoint welcoming visitors and providing API navigation."""
+    return {
+        "status": "online",
+        "message": "Support-Ticket Sentiment Classifier Backend is running successfully.",
+        "version": "1.0.0",
+        "endpoints": {
+            "health": "/api/v1/health",
+            "predict": "/api/v1/predict",
+            "docs": "/docs",
+            "redoc": "/redoc"
+        }
+    }
 
 
 class HealthResponse(BaseModel):

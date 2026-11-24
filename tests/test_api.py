@@ -25,6 +25,14 @@ class TestAPIEndpoints(unittest.TestCase):
     def tearDownClass(cls):
         cls.client_ctx.__exit__(None, None, None)
 
+    def test_root_endpoint(self):
+        response = self.client.get("/")
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertEqual(data["status"], "online")
+        self.assertIn("message", data)
+        self.assertIn("endpoints", data)
+
     def test_health_endpoint(self):
         response = self.client.get("/api/v1/health")
         self.assertEqual(response.status_code, 200)
