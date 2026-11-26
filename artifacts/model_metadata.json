@@ -68,6 +68,15 @@
         "seed": 42,
         "optimizer": "AdamW"
       },
+      "calibration": {
+        "method": "temperature_scaling",
+        "temperature": 1.665,
+        "fitted_on": "GLUE SST-2 validation logits",
+        "nll_before": 0.2428,
+        "nll_after": 0.2000,
+        "ece_before": 0.0489,
+        "ece_after": 0.0263
+      },
       "evaluation_metrics": {
         "dataset_split": "GLUE SST-2 validation",
         "sample_count": 872,
@@ -98,13 +107,14 @@
       "architecture": "Pipeline(TfidfVectorizer -> LogisticRegression)",
       "vectorizer_config": {
         "ngram_range": [1, 2],
-        "max_features": 10000,
-        "sublinear_tf": false,
+        "max_features": 20000,
+        "sublinear_tf": true,
         "norm": "l2"
       },
       "classifier_config": {
         "solver": "lbfgs",
         "C": 1.0,
+        "class_weight": "balanced",
         "max_iter": 1000,
         "random_state": 42
       },
@@ -120,25 +130,25 @@
       "evaluation_metrics": {
         "dataset_split": "GLUE SST-2 validation",
         "sample_count": 872,
-        "accuracy": 0.8130733944954128,
-        "precision": 0.7933194154488518,
-        "recall": 0.8558558558558559,
-        "f1_score": 0.8234019501625135,
-        "specificity": 0.7686915887850467,
-        "negative_predictive_value": 0.8371501272264631,
-        "false_positive_rate": 0.23130841121495327,
-        "false_negative_rate": 0.14414414414414414,
+        "accuracy": 0.8256880733944955,
+        "precision": 0.8288288288288288,
+        "recall": 0.8288288288288288,
+        "f1_score": 0.8288288288288288,
+        "specificity": 0.822429906542056,
+        "negative_predictive_value": 0.822429906542056,
+        "false_positive_rate": 0.17757009345794392,
+        "false_negative_rate": 0.17117117117117117,
         "confusion_matrix": {
-          "true_negatives": 329,
-          "false_positives": 99,
-          "false_negatives": 64,
-          "true_positives": 380
+          "true_negatives": 352,
+          "false_positives": 76,
+          "false_negatives": 76,
+          "true_positives": 368
         },
         "single_sample_latency_ms": {
-          "cpu_mean": 0.73232,
-          "cpu_p95": 1.01924
+          "cpu_mean": 0.73991,
+          "cpu_p95": 1.17704
         },
-        "single_stream_throughput_samples_per_sec": 1365.52
+        "single_stream_throughput_samples_per_sec": 1351.52
       }
     }
   }

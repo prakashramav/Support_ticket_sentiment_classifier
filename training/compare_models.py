@@ -68,14 +68,19 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--bert_model_dir",
         type=str,
-        default="models/bert-sst2",
+        default="artifacts/bert",
         help="Directory containing fine-tuned BERT model and tokenizer.",
     )
     parser.add_argument(
         "--baseline_model_path",
         type=str,
-        default="models/tfidf_baseline.joblib",
+        default="artifacts/tfidf/tfidf_logistic_regression.joblib",
         help="Path to serialized TF-IDF + Logistic Regression pipeline.",
+    )
+    parser.add_argument(
+        "--retrain_baseline",
+        action="store_true",
+        help="Force retraining of TF-IDF + Logistic Regression baseline strictly on train split.",
     )
     parser.add_argument(
         "--figures_dir",
@@ -112,42 +117,49 @@ def parse_args() -> argparse.Namespace:
 
 def load_or_train_baseline(
     baseline_path: str,
-    train_path: str
+    train_path: str,
+    force_retrain: bool = False
 ) -> Tuple[Pipeline, float]:
     """
-    Loads serialized TF-IDF + Logistic Regression pipeline if it exists,
-    otherwise fits on training data and persists to disk.
-    Strictly trains ONLY on the training split.
+    Loads serialized TF-IDF + Logistic Regression pipeline if it exists and force_retrain is False,
+    otherwise fits strictly on the SST-2 training split and persists to disk.
     """
-    if os.path.exists(baseline_path):
+    if os.path.exists(baseline_path) and not force_retrain:
         print(f"[Baseline] Loading pre-trained TF-IDF baseline from: {baseline_path}")
         t0 = time.perf_counter()
         pipeline = joblib.load(baseline_path)
         load_time_ms = (time.perf_counter() - t0) * 1000.0
         return pipeline, load_time_ms
 
-    print(f"[Baseline] Model file not found at {baseline_path}. Fitting on {train_path}...")
+    print(f"[Baseline] Fitting TF-IDF + Logistic Regression on {train_path}...")
     if not os.path.exists(train_path):
         raise FileNotFoundError(
             f"Training data not found at {train_path}. Cannot fit TF-IDF baseline."
         )
 
-    train_df = pd.read_csv(train_path)
+    train_df = pd.read_csv(train_path).dropna(subset=["sentence", "label"])
     if "sentence" not in train_df.columns or "label" not in train_df.columns:
         raise ValueError(f"Train dataset missing required columns: {train_df.columns}")
 
     t0 = time.perf_counter()
     pipeline = Pipeline([
-        ("tfidf", TfidfVectorizer(ngram_range=(1, 2), max_features=10000)),
-        ("clf", LogisticRegression(max_iter=1000, random_state=42)),
+        ("tfidf", TfidfVectorizer(ngram_range=(1, 2), max_features=20000, sublinear_tf=True)),
+        ("clf", LogisticRegression(C=1.0, max_iter=1000, class_weight="balanced", random_state=42)),
     ])
-    pipeline.fit(train_df["sentence"], train_df["label"])
+    pipeline.fit(train_df["sentence"], train_df["label"].astype(int))
     fit_time = time.perf_counter() - t0
-    print(f"[Baseline] Fit completed in {fit_time:.2f}s.")
+    print(f"[Baseline] Fit completed in {fit_time:.2f}s (vocab_size={len(pipeline.named_steps['tfidf'].vocabulary_)}, classes_={pipeline.classes_.tolist()}).")
 
     os.makedirs(os.path.dirname(os.path.abspath(baseline_path)), exist_ok=True)
     joblib.dump(pipeline, baseline_path)
     print(f"[Baseline] Serialized pipeline to {baseline_path}.")
+
+    mirror_path = os.path.join("models", "tfidf_baseline.joblib")
+    if os.path.abspath(baseline_path) != os.path.abspath(mirror_path):
+        os.makedirs(os.path.dirname(os.path.abspath(mirror_path)), exist_ok=True)
+        joblib.dump(pipeline, mirror_path)
+        print(f"[Baseline] Mirrored pipeline to {mirror_path}.")
+
     return pipeline, 0.0
 
 
@@ -672,7 +684,7 @@ def main():
 
     # 2. Evaluate Baseline: TF-IDF + Logistic Regression
     tfidf_pipeline, tfidf_load_time_ms = load_or_train_baseline(
-        args.baseline_model_path, args.train_data
+        args.baseline_model_path, args.train_data, force_retrain=args.retrain_baseline
     )
     print("[Baseline] Running predictions on validation dataset...")
     tfidf_preds = tfidf_pipeline.predict(sentences)

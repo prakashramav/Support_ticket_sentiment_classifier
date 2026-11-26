@@ -47,13 +47,13 @@ except Exception:
 train_df = pd.DataFrame(ds_raw["train"])
 val_df = pd.DataFrame(ds_raw["validation"])
 
-vec = TfidfVectorizer(ngram_range=(1, 2), max_features=10000)
+vec = TfidfVectorizer(ngram_range=(1, 2), max_features=20000, sublinear_tf=True)
 X_train_tfidf = vec.fit_transform(train_df["sentence"])
 y_train_tfidf = train_df["label"]
 X_val_tfidf = vec.transform(val_df["sentence"])
 y_val_tfidf = val_df["label"]
 
-tfidf_model = LogisticRegression(max_iter=1000, random_state=42)
+tfidf_model = LogisticRegression(C=1.0, max_iter=1000, class_weight="balanced", random_state=42)
 tfidf_model.fit(X_train_tfidf, y_train_tfidf)
 tfidf_preds = tfidf_model.predict(X_val_tfidf)
 

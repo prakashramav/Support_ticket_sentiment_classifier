@@ -19,10 +19,10 @@ Both models were trained on the official **GLUE SST-2 training split** ($67,349$
 
 ### Key Empirical Findings
 
-- **Predictive Superiority:** BERT achieved **$92.89\%$ Accuracy** and an **F1-score of $0.9306$**, outperforming the TF-IDF baseline ($81.31\%$ Accuracy, $0.8234$ F1-score) by **$+11.58\%$ absolute Accuracy** and **$+10.72\%$ absolute F1-score**.
-- **Error Reduction:** BERT reduced total classification errors from $163$ to $62$—a **$61.96\%$ relative error reduction**. Most notably, False Positives plummeted from $99$ down to $34$ (a $65.66\%$ reduction).
-- **Statistical Significance:** A paired **McNemar's test** with Edwards continuity correction yielded a $\chi^2$ statistic of **$63.69$** ($p = 1.45 \times 10^{-15} \ll 0.001$), formally proving that the measured performance differential is statistically significant and not an artifact of random sample variance.
-- **Latency & Compute Trade-Off:** Single-sample inference latency on CPU averaged **$0.73\text{ ms}$** for TF-IDF compared to **$11.59\text{ ms}$** for BERT on GPU (NVIDIA RTX 2050) and **$41.96\text{ ms}$** for BERT on CPU. While TF-IDF is $\approx 16\times$ faster than BERT on GPU and $\approx 57\times$ faster on CPU, BERT's sub-$15\text{ ms}$ GPU latency easily satisfies interactive real-time service level agreements (SLAs) for customer support ticketing systems ($<200\text{ ms}$).
+- **Predictive Superiority:** BERT achieved **$92.89\%$ Accuracy** and an **F1-score of $0.9306$**, outperforming the TF-IDF baseline ($82.57\%$ Accuracy, $0.8288$ F1-score) by **$+10.32\%$ absolute Accuracy** and **$+10.18\%$ absolute F1-score**.
+- **Error Reduction:** BERT reduced total classification errors from $152$ to $62$—a **$59.21\%$ relative error reduction**. Most notably, False Positives plummeted from $76$ down to $34$ (a $55.26\%$ reduction).
+- **Statistical Significance:** A paired **McNemar's test** with Edwards continuity correction yielded a $\chi^2$ statistic of **$54.25$** ($p = 1.76 \times 10^{-13} \ll 0.001$), formally proving that the measured performance differential is statistically significant and not an artifact of random sample variance.
+- **Latency & Compute Trade-Off:** Single-sample inference latency on CPU averaged **$0.74\text{ ms}$** for TF-IDF compared to **$12.19\text{ ms}$** for BERT on GPU (NVIDIA RTX 2050) and **$44.48\text{ ms}$** for BERT on CPU. While TF-IDF is $\approx 16.5\times$ faster than BERT on GPU and $\approx 60.1\times$ faster on CPU, BERT's sub-$15\text{ ms}$ GPU latency easily satisfies interactive real-time service level agreements (SLAs) for customer support ticketing systems ($<200\text{ ms}$).
 - **Domain Shift Disclosure:** The SST-2 dataset originates from Rotten Tomatoes movie reviews. While it demonstrates BERT's contextual semantic comprehension, real-world customer support tickets exhibit distinct linguistic patterns (e.g., domain terminology, system error codes, mixed polite closings and severe grievances). Production deployment requires validation on an annotated support-ticket dataset.
 
 ---
@@ -68,9 +68,9 @@ Raw Text ──► WordPiece Tokenizer ──► 12 Transformer Encoder Layers �
 
 ### 1. TF-IDF + Logistic Regression Baseline
 - **Feature Extraction:** `TfidfVectorizer` extracting word unigrams and bigrams (`ngram_range=(1, 2)`).
-- **Vocabulary Size:** Capped at the top $10,000$ most informative n-grams ordered by term frequency across the training corpus.
+- **Vocabulary Size:** Capped at the top $20,000$ most informative n-grams ordered by term frequency across the training corpus.
 - **Sublinear Term Frequency Scaling:** Applied standard sublinear scaling ($1 + \log(\text{tf})$) to dampen the impact of repeated words.
-- **Classifier:** $L_2$-regularized Logistic Regression optimized via the `lbfgs` solver (`C=1.0`, `max_iter=1000`, `random_state=42`).
+- **Classifier:** $L_2$-regularized Logistic Regression optimized via the `lbfgs` solver (`C=1.0`, `class_weight="balanced"`, `max_iter=1000`, `random_state=42`).
 - **Core Limitation:** Bag-of-words representations discard word order and grammatical dependency syntax. Phrases such as *"not bad"* and *"bad, not good"* share identical bag-of-words tokens, impairing the model's ability to interpret negations, idioms, and contrastive discourse markers (*"although"*, *"despite"*, *"however"*).
 
 ### 2. Fine-Tuned BERT (`bert-base-uncased`)
@@ -149,21 +149,21 @@ The following table presents the actual, measured performance metrics calculated
 
 | Metric | BERT Fine-Tuned (`bert-base-uncased`) | TF-IDF + Logistic Regression | Absolute Delta ($\Delta$) | Relative Improvement | Superior Model |
 | :--- | :---: | :---: | :---: | :---: | :---: |
-| **Accuracy** | **0.9289 (92.89%)** | 0.8131 (81.31%) | **+11.58%** | **+14.24%** | **BERT** |
-| **Precision (Pos, Class 1)** | **0.9244 (92.44%)** | 0.7933 (79.33%) | **+13.11%** | **+16.53%** | **BERT** |
-| **Recall (Pos, Class 1)** | **0.9369 (93.69%)** | 0.8559 (85.59%) | **+8.10%** | **+9.47%** | **BERT** |
-| **F1-Score (Pos, Class 1)** | **0.9306 (93.06%)** | 0.8234 (82.34%) | **+10.72%** | **+13.02%** | **BERT** |
-| **Specificity (Class 0 TNR)** | **0.9206 (92.06%)** | 0.7687 (76.87%) | **+15.19%** | **+19.76%** | **BERT** |
-| **NPV (Class 0 Precision)** | **0.9336 (93.36%)** | 0.8372 (83.72%) | **+9.64%** | **+11.51%** | **BERT** |
-| **Macro Average F1** | **0.9289** | 0.8124 | **+11.65%** | **+14.34%** | **BERT** |
-| **Weighted Average F1** | **0.9289** | 0.8126 | **+11.63%** | **+14.31%** | **BERT** |
-| **False Positive Rate (FPR)** | **0.0794 (7.94%)** | 0.2313 (23.13%) | **-15.19%** | **-65.67% (Better)** | **BERT** |
-| **False Negative Rate (FNR)** | **0.0631 (6.31%)** | 0.1441 (14.41%) | **-8.10%** | **-56.21% (Better)** | **BERT** |
-| **Single-Sample Latency (GPU)** | 11.59 ms (p95: 14.96 ms) | N/A (CPU bound) | N/A | N/A | TF-IDF |
-| **Single-Sample Latency (CPU)** | 41.96 ms (p95: 50.20 ms) | **0.73 ms (p95: 1.02 ms)** | -41.23 ms | **57.3× faster** | **TF-IDF** |
-| **Single-Stream Throughput** | 86.3 req/s (GPU) / 23.8 req/s (CPU) | **1,365.5 req/s (CPU)** | N/A | **15.8× higher (vs GPU)** | **TF-IDF** |
-| **Model Size on Disk** | 437.96 MB | **1.21 MB** | +436.75 MB | **362× lighter** | **TF-IDF** |
-| **Cold Start Loading Time** | 1,931.39 ms (GPU) / 300.0 ms (CPU) | **41.86 ms (CPU)** | -1,889.53 ms | **46.1× faster** | **TF-IDF** |
+| **Accuracy** | **0.9289 (92.89%)** | 0.8257 (82.57%) | **+10.32%** | **+12.50%** | **BERT** |
+| **Precision (Pos, Class 1)** | **0.9244 (92.44%)** | 0.8288 (82.88%) | **+9.56%** | **+11.53%** | **BERT** |
+| **Recall (Pos, Class 1)** | **0.9369 (93.69%)** | 0.8288 (82.88%) | **+10.81%** | **+13.04%** | **BERT** |
+| **F1-Score (Pos, Class 1)** | **0.9306 (93.06%)** | 0.8288 (82.88%) | **+10.18%** | **+12.28%** | **BERT** |
+| **Specificity (Class 0 TNR)** | **0.9206 (92.06%)** | 0.8224 (82.24%) | **+9.81%** | **+11.93%** | **BERT** |
+| **NPV (Class 0 Precision)** | **0.9336 (93.36%)** | 0.8224 (82.24%) | **+11.12%** | **+13.52%** | **BERT** |
+| **Macro Average F1** | **0.9289** | 0.8256 | **+10.33%** | **+12.51%** | **BERT** |
+| **Weighted Average F1** | **0.9289** | 0.8257 | **+10.32%** | **+12.50%** | **BERT** |
+| **False Positive Rate (FPR)** | **0.0794 (7.94%)** | 0.1776 (17.76%) | **-9.81%** | **-55.26% (Better)** | **BERT** |
+| **False Negative Rate (FNR)** | **0.0631 (6.31%)** | 0.1712 (17.12%) | **-10.81%** | **-63.16% (Better)** | **BERT** |
+| **Single-Sample Latency (GPU)** | 12.19 ms (p95: 16.36 ms) | N/A (CPU bound) | N/A | N/A | TF-IDF |
+| **Single-Sample Latency (CPU)** | 44.48 ms (p95: 55.93 ms) | **0.74 ms (p95: 1.18 ms)** | -43.74 ms | **60.1× faster** | **TF-IDF** |
+| **Single-Stream Throughput** | 82.0 req/s (GPU) / 22.5 req/s (CPU) | **1,351.5 req/s (CPU)** | N/A | **16.5× higher (vs GPU)** | **TF-IDF** |
+| **Model Size on Disk** | 437.96 MB | **0.96 MB** | +437.00 MB | **456× lighter** | **TF-IDF** |
+| **Cold Start Loading Time** | 2,216.92 ms (GPU) / 300.0 ms (CPU) | **~40 ms (CPU)** | -2,176.9 ms | **>50× faster** | **TF-IDF** |
 
 ---
 
@@ -175,22 +175,22 @@ The following table presents the actual, measured performance metrics calculated
 BERT Fine-Tuned:                         TF-IDF + Logistic Regression:
                   Predicted                               Predicted
                Neg (0)   Pos (1)                       Neg (0)   Pos (1)
-Actual Neg (0)   394       34           Actual Neg (0)   329       99
-Actual Pos (1)    28      416           Actual Pos (1)    64      380
+Actual Neg (0)   394       34           Actual Neg (0)   352       76
+Actual Pos (1)    28      416           Actual Pos (1)    76      368
 ```
 
 | Cell Category | BERT Count | BERT % of Split | TF-IDF Count | TF-IDF % of Split | Net Change | Interpretation |
 | :--- | :---: | :---: | :---: | :---: | :---: | :--- |
-| **True Negatives ($\text{TN}$)** | **394** | 45.18% | 329 | 37.73% | **+65 (+19.76%)** | Negative samples correctly identified |
-| **False Positives ($\text{FP}$)** | **34** | 3.90% | 99 | 11.35% | **-65 (-65.66%)** | Negative samples wrongly flagged as Positive |
-| **False Negatives ($\text{FN}$)** | **28** | 3.21% | 64 | 7.34% | **-36 (-56.25%)** | Positive samples wrongly flagged as Negative |
-| **True Positives ($\text{TP}$)** | **416** | 47.71% | 380 | 43.58% | **+36 (+9.47%)** | Positive samples correctly identified |
-| **Total Correct** | **810** | **92.89%** | 709 | 81.31% | **+101** | Total accurate classifications |
-| **Total Errors** | **62** | **7.11%** | 163 | 18.69% | **-101 (-61.96%)** | Total misclassifications |
+| **True Negatives ($\text{TN}$)** | **394** | 45.18% | 352 | 40.37% | **+42 (+11.93%)** | Negative samples correctly identified |
+| **False Positives ($\text{FP}$)** | **34** | 3.90% | 76 | 8.72% | **-42 (-55.26%)** | Negative samples wrongly flagged as Positive |
+| **False Negatives ($\text{FN}$)** | **28** | 3.21% | 76 | 8.72% | **-48 (-63.16%)** | Positive samples wrongly flagged as Negative |
+| **True Positives ($\text{TP}$)** | **416** | 47.71% | 368 | 42.20% | **+48 (+13.04%)** | Positive samples correctly identified |
+| **Total Correct** | **810** | **92.89%** | 720 | 82.57% | **+90** | Total accurate classifications |
+| **Total Errors** | **62** | **7.11%** | 152 | 17.43% | **-90 (-59.21%)** | Total misclassifications |
 
 ### Operational Implications for Support Ticketing
-1. **Critical False Positive Reduction (65.66% decrease):** In customer service, a False Positive occurs when a negative ticket (an angry, frustrated, or churn-risk customer) is misclassified as positive. In an automated triage pipeline, this causes urgent tickets to be routed to low-priority queues, exacerbating customer frustration. TF-IDF misclassified $99$ negative tickets as positive ($23.13\%$ FPR), whereas BERT reduced this to only $34$ tickets ($7.94\%$ FPR).
-2. **Balanced Error Profile:** BERT maintains an exceptionally symmetric error rate across both classes ($34$ FP vs. $28$ FN), indicating that the decision threshold ($0.5$) is well-calibrated and does not artificially favor one sentiment class. In contrast, TF-IDF exhibits a pronounced positive bias ($99$ FP vs. $64$ FN).
+1. **Critical False Positive Reduction (55.26% decrease):** In customer service, a False Positive occurs when a negative ticket (an angry, frustrated, or churn-risk customer) is misclassified as positive. In an automated triage pipeline, this causes urgent tickets to be routed to low-priority queues, exacerbating customer frustration. TF-IDF misclassified $76$ negative tickets as positive ($17.76\%$ FPR), whereas BERT reduced this to only $34$ tickets ($7.94\%$ FPR).
+2. **Balanced Error Profile:** BERT maintains an exceptionally symmetric error rate across both classes ($34$ FP vs. $28$ FN), indicating that the decision threshold ($0.5$) is well-calibrated and does not artificially favor one sentiment class. With `class_weight="balanced"`, TF-IDF also achieves symmetric error distribution ($76$ FP vs. $76$ FN).
 
 ---
 
@@ -233,27 +233,27 @@ Measurements were captured across $200$ individual single-sample inferences foll
 
 | Metric | TF-IDF (CPU) | BERT (GPU - RTX 2050) | BERT (CPU) |
 | :--- | :---: | :---: | :---: |
-| **Mean Single-Sample Latency** | **0.73 ms** | 11.59 ms | 41.96 ms |
-| **Median Single-Sample Latency** | **0.67 ms** | 9.87 ms | 42.39 ms |
-| **Standard Deviation** | **0.20 ms** | 7.39 ms | 5.81 ms |
-| **95th Percentile (P95)** | **1.02 ms** | 14.96 ms | 50.20 ms |
-| **99th Percentile (P99)** | **1.68 ms** | 24.78 ms | 52.73 ms |
-| **Single-Stream Throughput** | **1,365.5 tickets/s** | 86.3 tickets/s | 23.8 tickets/s |
-| **Batch Throughput (Batch Size = 32)** | **44,258 tickets/s** | 191.0 tickets/s | 35.8 tickets/s |
-| **Memory Footprint (Weights)** | **1.2 MB** | 438 MB | 438 MB |
+| **Mean Single-Sample Latency** | **0.74 ms** | 12.19 ms | 44.48 ms |
+| **Median Single-Sample Latency** | **0.65 ms** | 11.55 ms | 43.59 ms |
+| **Standard Deviation** | **0.20 ms** | 1.91 ms | 6.54 ms |
+| **95th Percentile (P95)** | **1.18 ms** | 16.36 ms | 55.93 ms |
+| **99th Percentile (P99)** | **1.46 ms** | 17.74 ms | 58.93 ms |
+| **Single-Stream Throughput** | **1,351.5 tickets/s** | 82.0 tickets/s | 22.5 tickets/s |
+| **Batch Throughput (Batch Size = 32)** | **40,188 tickets/s** | 191.3 tickets/s | 35.2 tickets/s |
+| **Memory Footprint (Weights)** | **0.96 MB** | 438 MB | 438 MB |
 | **VRAM Consumption** | 0 MB | $\approx 1.2\text{ GB}$ (FP16 execution) | 0 MB |
 
 ### 2. Rigorous Trade-off Analysis
 
 1. **Accuracy vs. Computational Cost:**
-   - BERT improves predictive accuracy by **$+11.58\%$** and cuts false positive errors by **$65.66\%$**.
-   - However, BERT requires **$15.8\times$** more computation time per sample on GPU and **$57.3\times$** more on CPU compared to TF-IDF.
+   - BERT improves predictive accuracy by **$+10.32\%$** and cuts false positive errors by **$55.26\%$**.
+   - However, BERT requires **$16.5\times$** more computation time per sample on GPU and **$60.1\times$** more on CPU compared to TF-IDF.
 2. **Interactive SLA Feasibility:**
    - Standard web application SLAs for live customer support ticket submission mandate a response time under $200\text{ ms}$.
-   - BERT's GPU latency of **$11.59\text{ ms}$ (P95: $14.96\text{ ms}$)** consumes less than $10\%$ of this budget, leaving ample headroom for database operations, API gateway routing, and frontend rendering.
-   - Even on a commodity CPU without dedicated hardware accelerators, BERT's **$41.96\text{ ms}$** mean latency easily satisfies interactive requirements for low-to-moderate ticket volumes.
+   - BERT's GPU latency of **$12.19\text{ ms}$ (P95: $16.36\text{ ms}$)** consumes less than $10\%$ of this budget, leaving ample headroom for database operations, API gateway routing, and frontend rendering.
+   - Even on a commodity CPU without dedicated hardware accelerators, BERT's **$44.48\text{ ms}$** mean latency easily satisfies interactive requirements for low-to-moderate ticket volumes.
 3. **High-Volume Asynchronous Batch Ingestion:**
-   - For historical ticket backfills, log processing, or organizations processing tens of thousands of tickets per second, TF-IDF's batch throughput of **$44,258\text{ tickets/s}$** on CPU allows massive scalability at negligible infrastructure cost.
+   - For historical ticket backfills, log processing, or organizations processing tens of thousands of tickets per second, TF-IDF's batch throughput of **$40,188\text{ tickets/s}$** on CPU allows massive scalability at negligible infrastructure cost.
    - Running BERT on comparable volume would require a cluster of GPU instances, significantly increasing monthly cloud expenditures.
 
 ---
@@ -262,17 +262,16 @@ Measurements were captured across $200$ individual single-sample inferences foll
 
 To understand why the two architectures diverge, we conducted an error analysis on the validation predictions, categorizing misclassifications into three distinct behavioral regimes.
 
-### Category 1: BERT Correct, TF-IDF Misclassified (129 Cases)
+### Category 1: BERT Correct, TF-IDF Misclassified (118 Cases)
 
-In $129$ instances ($14.79\%$ of the validation set), BERT correctly classified the sentence while TF-IDF failed. In virtually all cases, TF-IDF was deceived by isolated sentiment keywords appearing within negative or contrastive contexts.
+In $118$ instances ($13.53\%$ of the validation set), BERT correctly classified the sentence while TF-IDF failed. In virtually all cases, TF-IDF was deceived by isolated sentiment keywords appearing within negative or contrastive contexts.
 
 | Index | Sentence Text | Ground Truth | BERT Prediction (Confidence) | TF-IDF Prediction (Confidence) | Failure Mechanism in TF-IDF |
 | :---: | :--- | :---: | :---: | :---: | :--- |
-| **19** | *"in its best moments , resembles a bad high school production of grease , without benefit of song ."* | **NEGATIVE (0)** | **NEGATIVE (0)** ($99.75\%$) | **POSITIVE (1)** ($72.09\%$) | TF-IDF heavily weighted the unigram *"best"*, completely missing the overarching comparative insult (*"resembles a bad high school production"*). BERT attended to the complete clause structure. |
-| **11** | *"it takes a strange kind of laziness to waste the talents of robert forster , anne meara , eugene levy , and reginald veljohnson all in the same movie ."* | **NEGATIVE (0)** | **NEGATIVE (0)** ($99.68\%$) | **POSITIVE (1)** ($53.07\%$) | TF-IDF picked up the positive token *"talents"*. BERT's self-attention bound *"laziness"* and *"waste"* to *"talents"*, recognizing the severe criticism. |
-| **20** | *"pumpkin takes an admirable look at the hypocrisy of political correctness , but it does so with such an uneven tone that you never know when humor ends and tragedy begins ."* | **NEGATIVE (0)** | **NEGATIVE (0)** ($99.06\%$) | **POSITIVE (1)** ($62.72\%$) | The sentence starts with praise (*"admirable"*, *"humor"*) before pivoting across the contrastive conjunction *"but"*. TF-IDF summed positive weights; BERT weighted the terminal clause. |
-| **37** | *"( w ) hile long on amiable monkeys and worthy environmentalism , jane goodall 's wild chimpanzees is short on the thrills the oversize medium demands ."* | **NEGATIVE (0)** | **NEGATIVE (0)** ($99.11\%$) | **POSITIVE (1)** ($62.56\%$) | Subordinate concession clause (*"While long on amiable..."*) fooled the linear model. BERT recognized the principal clause (*"is short on thrills"*). |
-| **28** | *"it 's a cookie-cutter movie , a cut-and-paste job ."* | **NEGATIVE (0)** | **NEGATIVE (0)** ($99.54\%$) | **POSITIVE (1)** ($67.86\%$) | Metaphorical, idiomatic criticism (*"cookie-cutter"*, *"cut-and-paste"*). Unigrams had no negative correlation in the TF-IDF vocabulary, but BERT's pretrained representation recognized the colloquial negative idiom. |
+| **19** | *"in its best moments , resembles a bad high school production of grease , without benefit of song ."* | **NEGATIVE (0)** | **NEGATIVE (0)** ($99.75\%$) | **POSITIVE (1)** ($69.56\%$) | TF-IDF heavily weighted the unigram *"best"*, completely missing the overarching comparative insult (*"resembles a bad high school production"*). BERT attended to the complete clause structure. |
+| **20** | *"pumpkin takes an admirable look at the hypocrisy of political correctness , but it does so with such an uneven tone that you never know when humor ends and tragedy begins ."* | **NEGATIVE (0)** | **NEGATIVE (0)** ($99.06\%$) | **POSITIVE (1)** ($53.91\%$) | The sentence starts with praise (*"admirable"*, *"humor"*) before pivoting across the contrastive conjunction *"but"*. TF-IDF summed positive weights; BERT weighted the terminal clause. |
+| **37** | *"( w ) hile long on amiable monkeys and worthy environmentalism , jane goodall 's wild chimpanzees is short on the thrills the oversize medium demands ."* | **NEGATIVE (0)** | **NEGATIVE (0)** ($99.11\%$) | **POSITIVE (1)** ($55.62\%$) | Subordinate concession clause (*"While long on amiable..."*) fooled the linear model. BERT recognized the principal clause (*"is short on thrills"*). |
+| **28** | *"it 's a cookie-cutter movie , a cut-and-paste job ."* | **NEGATIVE (0)** | **NEGATIVE (0)** ($99.54\%$) | **POSITIVE (1)** ($64.73\%$) | Metaphorical, idiomatic criticism (*"cookie-cutter"*, *"cut-and-paste"*). Unigrams lacked negative correlation in the TF-IDF vocabulary, whereas BERT's pretrained representation recognized the colloquial negative idiom. |
 
 ### Category 2: TF-IDF Correct, BERT Misclassified (28 Cases)
 
@@ -280,10 +279,9 @@ In $28$ instances ($3.21\%$ of the dataset), the classical linear model predicte
 
 | Index | Sentence Text | Ground Truth | BERT Prediction (Confidence) | TF-IDF Prediction (Confidence) | Failure Mechanism in BERT |
 | :---: | :--- | :---: | :---: | :---: | :--- |
-| **46** | *"a synthesis of cliches and absurdities that seems positively decadent in its cinematic flash and emptiness ."* | **NEGATIVE (0)** | **POSITIVE (1)** ($98.07\%$) | **NEGATIVE (0)** ($88.66\%$) | The word *"positively"* is used as an intensifier (*"positively decadent"*). BERT's attention assigned overwhelming positive probability to the subword token `positive`, resulting in a high-confidence False Positive. |
-| **22** | *"holden caulfield did it better ."* | **NEGATIVE (0)** | **POSITIVE (1)** ($64.53\%$) | **NEGATIVE (0)** ($61.67\%$) | Requires external literary knowledge: comparing a protagonist unfavorably to Holden Caulfield (*Catcher in the Rye*) implies the movie character is an unconvincing imitation. BERT saw *"better"* without external context. |
-| **69** | *"this one is definitely one to skip , even for horror movie fanatics ."* | **NEGATIVE (0)** | **POSITIVE (1)** ($91.39\%$) | **NEGATIVE (0)** ($51.36\%$) | The phrase *"one to skip"* contains no explicit profanity or strong negative adjectives. TF-IDF happened to have encountered *"skip"* as a negative unigram in the training set; BERT failed to place sufficient negative weight on *"skip"*. |
-| **13** | *"we root for ( clara and paul ) , even like them , though perhaps it 's an emotion closer to pity ."* | **POSITIVE (1)** | **NEGATIVE (0)** ($56.01\%$) | **POSITIVE (1)** ($53.81\%$) | Mixed sentiment with emotional hedging (*"emotion closer to pity"*). BERT leaned slightly toward negative ($56.0\%$), while TF-IDF's positive tokens (*"root"*, *"like"*) carried it across the threshold. |
+| **46** | *"a synthesis of cliches and absurdities that seems positively decadent in its cinematic flash and emptiness ."* | **NEGATIVE (0)** | **POSITIVE (1)** ($98.07\%$) | **NEGATIVE (0)** ($90.25\%$) | The word *"positively"* is used as an intensifier (*"positively decadent"*). BERT's attention assigned overwhelming positive probability to the subword token `positive`, resulting in a high-confidence False Positive. |
+| **22** | *"holden caulfield did it better ."* | **NEGATIVE (0)** | **POSITIVE (1)** ($64.53\%$) | **NEGATIVE (0)** ($56.37\%$) | Requires external literary knowledge: comparing a protagonist unfavorably to Holden Caulfield (*Catcher in the Rye*) implies the movie character is an unconvincing imitation. BERT saw *"better"* without external context. |
+| **69** | *"this one is definitely one to skip , even for horror movie fanatics ."* | **NEGATIVE (0)** | **POSITIVE (1)** ($91.39\%$) | **NEGATIVE (0)** ($62.60\%$) | The phrase *"one to skip"* contains no explicit profanity or strong negative adjectives. TF-IDF encountered *"skip"* as a negative unigram in the training set; BERT failed to place sufficient negative weight on *"skip"*. |
 
 ### Category 3: Both Models Misclassified (34 Cases)
 
@@ -324,17 +322,17 @@ A comprehensive machine learning evaluation must explicitly acknowledge domain m
 
 ### Empirical Verdict
 
-1. **Predictive Capability:** BERT is decidedly superior to TF-IDF + Logistic Regression, achieving **$92.89\%$ vs. $81.31\%$ Accuracy** ($+11.58\%$) and **$0.9306$ vs. $0.8234$ F1-Score** ($+10.72\%$).
-2. **Statistically Significant:** The measured difference is validated by McNemar's test ($\chi^2 = 63.69$, $p = 1.45 \times 10^{-15}$), confirming that BERT's bidirectional attention provides a genuine, reproducible advantage in capturing semantic context and negations.
-3. **Inference Viability:** BERT's single-sample inference latency of **$11.59\text{ ms}$ on GPU** and **$41.96\text{ ms}$ on CPU** satisfies the requirements of real-time interactive ticket classification pipelines ($<200\text{ ms}$).
+1. **Predictive Capability:** BERT is decidedly superior to TF-IDF + Logistic Regression, achieving **$92.89\%$ vs. $82.57\%$ Accuracy** ($+10.32\%$) and **$0.9306$ vs. $0.8288$ F1-Score** ($+10.18\%$).
+2. **Statistically Significant:** The measured difference is validated by McNemar's test ($\chi^2 = 54.25$, $p = 1.76 \times 10^{-13}$), confirming that BERT's bidirectional attention provides a genuine, reproducible advantage in capturing semantic context and negations.
+3. **Inference Viability:** BERT's single-sample inference latency of **$12.19\text{ ms}$ on GPU** and **$44.48\text{ ms}$ on CPU** satisfies the requirements of real-time interactive ticket classification pipelines ($<200\text{ ms}$).
 
 ### Recommended Architecture Strategy
 
 | Deployment Scenario | Recommended Model | Rationale |
 | :--- | :--- | :--- |
-| **Production Support-Ticket Triage (Real-Time)** | **Fine-Tuned Transformer (BERT / DistilBERT)** | Minimizing False Positives (preventing angry customers from being misrouted) is the paramount operational metric. BERT cuts False Positives by $65.66\%$, protecting customer trust. |
+| **Production Support-Ticket Triage (Real-Time)** | **Fine-Tuned Transformer (BERT / DistilBERT)** | Minimizing False Positives (preventing angry customers from being misrouted) is the paramount operational metric. BERT cuts False Positives by $55.26\%$, protecting customer trust. |
 | **Cost-Sensitive / Serverless Deployment** | **DistilBERT / ONNX Quantized BERT** | Compressing BERT via knowledge distillation (DistilBERT) or 8-bit dynamic quantization (ONNX Runtime) yields $97\%$ of BERT's accuracy with $40\%$ fewer parameters and sub-$10\text{ ms}$ CPU latency, eliminating GPU hosting costs. |
-| **High-Throughput Offline Batch Processing** | **TF-IDF + Logistic Regression** | Processing millions of historical tickets for macro analytics at $>44,000\text{ tickets/s}$ on a standard CPU with virtually zero compute expenditure. |
+| **High-Throughput Offline Batch Processing** | **TF-IDF + Logistic Regression** | Processing millions of historical tickets for macro analytics at $>40,000\text{ tickets/s}$ on a standard CPU with virtually zero compute expenditure. |
 | **Hybrid Cascade (Two-Tier Architecture)** | **TF-IDF First-Pass + BERT Fallback** | Use TF-IDF for rapid filtering. If TF-IDF confidence is high ($>90\%$), accept prediction ($0.7\text{ ms}$). If confidence is ambiguous ($50\text{–}85\%$), route the ticket to BERT for deep contextual evaluation. This hybrid model captures $92\%+$ accuracy while maintaining $>500\text{ req/s}$ throughput. |
 
 ---

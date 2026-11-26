@@ -114,7 +114,7 @@ export default function Footer() {
             </h3>
             <ul className="mt-4 space-y-2.5 text-sm">
               <li className="text-slate-600 dark:text-slate-400">BERT (Hugging Face)</li>
-              <li className="text-slate-600 dark:text-slate-400">TF-IDF + Linear SVM</li>
+              <li className="text-slate-600 dark:text-slate-400">TF-IDF + Logistic Regression</li>
               <li className="text-slate-600 dark:text-slate-400">FastAPI & Pydantic</li>
               <li className="text-slate-600 dark:text-slate-400">Next.js 16 (App Router)</li>
             </ul>

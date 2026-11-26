@@ -26,7 +26,7 @@ export default function HowItWorksSection() {
     {
       num: "03",
       title: "BERT or TF-IDF Model",
-      desc: "Deep Transformer encoder or Linear SVM boundary.",
+      desc: "Deep Transformer encoder or Logistic Regression boundary.",
       icon: Cpu,
     },
     {
@@ -180,7 +180,7 @@ export default function HowItWorksSection() {
                 </div>
                 <div>
                   <h4 className="text-base font-bold text-slate-900 dark:text-white">
-                    Baseline Path (TF-IDF + SVM)
+                    Baseline Path (TF-IDF + Logistic Regression)
                   </h4>
                   <span className="text-xs text-slate-500 dark:text-slate-400">
                     Classical Machine Learning Pipeline
@@ -225,7 +225,7 @@ export default function HowItWorksSection() {
                   4
                 </span>
                 <span className="rounded-lg bg-slate-50 px-3 py-2 text-xs font-medium text-slate-700 border border-slate-200 dark:bg-slate-800/80 dark:border-slate-700 dark:text-slate-200 w-full">
-                  Linear Support Vector Machine (Linear SVM) Hyperplane
+                  L2-Regularized Logistic Regression Classifier
                 </span>
               </div>
               <div className="flex justify-center text-slate-300 dark:text-slate-700">↓</div>

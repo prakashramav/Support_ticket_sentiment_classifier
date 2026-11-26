@@ -15,7 +15,7 @@ An end-to-end, production-oriented sentiment classification system designed to a
 
 This repository compares two distinct NLP paradigms on the official **GLUE SST-2 (Stanford Sentiment Treebank)** benchmark ($67,349$ training sentences, $872$ validation sentences):
 
-1. **TF-IDF + Logistic Regression:** Classical n-gram bag-of-words baseline ($10,000$ features, $L_2$ regularization).
+1. **TF-IDF + Logistic Regression:** Classical n-gram bag-of-words baseline ($20,000$ features, `sublinear_tf=True`, `class_weight="balanced"`, $L_2$ regularization).
 2. **BERT Fine-Tuning (`bert-base-uncased`):** Pretrained 110M parameter bidirectional transformer fine-tuned for sequence classification on GPU with mixed precision (`fp16`).
 
 The complete, evidence-based 14-section evaluation report is available at [`docs/model_comparison_report.md`](docs/model_comparison_report.md).
@@ -91,24 +91,24 @@ Evaluated on the official **GLUE SST-2 validation split** ($N = 872$ sentences; 
 
 | Metric | BERT Fine-Tuned (`bert-base-uncased`) | TF-IDF + Logistic Regression | Absolute Delta ($\Delta$) | Superior Model |
 | :--- | :---: | :---: | :---: | :---: |
-| **Accuracy** | **0.9289 (92.89%)** | 0.8131 (81.31%) | **+11.58%** | **BERT** |
-| **Precision (Positive, Class 1)** | **0.9244 (92.44%)** | 0.7933 (79.33%) | **+13.11%** | **BERT** |
-| **Recall (Positive, Class 1)** | **0.9369 (93.69%)** | 0.8559 (85.59%) | **+8.10%** | **BERT** |
-| **F1-Score (Positive, Class 1)** | **0.9306 (93.06%)** | 0.8234 (82.34%) | **+10.72%** | **BERT** |
-| **Specificity (Negative TNR)** | **0.9206 (92.06%)** | 0.7687 (76.87%) | **+15.19%** | **BERT** |
-| **Negative Predictive Value (NPV)** | **0.9336 (93.36%)** | 0.8372 (83.72%) | **+9.64%** | **BERT** |
-| **False Positive Rate (FPR)** | **0.0794 (7.94%)** | 0.2313 (23.13%) | **-15.19% (65.7% fewer FP)** | **BERT** |
-| **False Negative Rate (FNR)** | **0.0631 (6.31%)** | 0.1441 (14.41%) | **-8.10% (56.2% fewer FN)** | **BERT** |
-| **Single-Sample Latency (GPU, RTX 2050)** | **11.59 ms** (P95: 14.96 ms) | N/A (CPU bound) | — | TF-IDF |
-| **Single-Sample Latency (CPU)** | 41.96 ms (P95: 50.20 ms) | **0.73 ms** (P95: 1.02 ms) | -41.23 ms | **TF-IDF (57.3× faster)** |
-| **Single-Stream Throughput** | 86.3 req/s (GPU) / 23.8 req/s (CPU) | **1,365.5 req/s (CPU)** | — | **TF-IDF (15.8× higher)** |
-| **Total Model Errors ($N=872$)** | **62 errors (7.11%)** | 163 errors (18.69%) | **-101 errors** | **BERT (-61.96% errors)** |
+| **Accuracy** | **0.9289 (92.89%)** | 0.8257 (82.57%) | **+10.32%** | **BERT** |
+| **Precision (Positive, Class 1)** | **0.9244 (92.44%)** | 0.8288 (82.88%) | **+9.56%** | **BERT** |
+| **Recall (Positive, Class 1)** | **0.9369 (93.69%)** | 0.8288 (82.88%) | **+10.81%** | **BERT** |
+| **F1-Score (Positive, Class 1)** | **0.9306 (93.06%)** | 0.8288 (82.88%) | **+10.18%** | **BERT** |
+| **Specificity (Negative TNR)** | **0.9206 (92.06%)** | 0.8224 (82.24%) | **+9.81%** | **BERT** |
+| **Negative Predictive Value (NPV)** | **0.9336 (93.36%)** | 0.8224 (82.24%) | **+11.12%** | **BERT** |
+| **False Positive Rate (FPR)** | **0.0794 (7.94%)** | 0.1776 (17.76%) | **-9.81% (55.3% fewer FP)** | **BERT** |
+| **False Negative Rate (FNR)** | **0.0631 (6.31%)** | 0.1712 (17.12%) | **-10.81% (63.1% fewer FN)** | **BERT** |
+| **Single-Sample Latency (GPU, RTX 2050)** | **12.19 ms** (P95: 16.36 ms) | N/A (CPU bound) | — | TF-IDF |
+| **Single-Sample Latency (CPU)** | 44.48 ms (P95: 55.93 ms) | **0.74 ms** (P95: 1.18 ms) | -43.74 ms | **TF-IDF (60.1× faster)** |
+| **Single-Stream Throughput** | 82.0 req/s (GPU) / 22.5 req/s (CPU) | **1,351.5 req/s (CPU)** | — | **TF-IDF (16.5× higher)** |
+| **Total Model Errors ($N=872$)** | **62 errors (7.11%)** | 152 errors (17.43%) | **-90 errors** | **BERT (-59.21% errors)** |
 
 ### 2. Statistical Significance Testing
 
 A paired **McNemar's test** with Edwards continuity correction between BERT and TF-IDF predictions on the 872 validation sentences yielded:
-- **$\chi^2$ Statistic:** $63.6943$
-- **$p$-value:** **$1.4531 \times 10^{-15} \ll 0.001$**
+- **$\chi^2$ Statistic:** $54.2534$
+- **$p$-value:** **$1.7623 \times 10^{-13} \ll 0.001$**
 
 The performance difference is statistically significant, formally rejecting the null hypothesis of equal marginal performance.
 
@@ -118,11 +118,11 @@ The performance difference is statistically significant, formally rejecting the 
 BERT Fine-Tuned:                         TF-IDF + Logistic Regression:
                   Predicted                               Predicted
                Neg (0)   Pos (1)                       Neg (0)   Pos (1)
-Actual Neg (0)   394       34           Actual Neg (0)   329       99
-Actual Pos (1)    28      416           Actual Pos (1)    64      380
+Actual Neg (0)   394       34           Actual Neg (0)   352       76
+Actual Pos (1)    28      416           Actual Pos (1)    76      368
 ```
 
-- **Critical False Positive Reduction:** In automated customer support triage, a False Positive misclassifies an angry/churn-risk customer as positive. TF-IDF made $99$ False Positives ($23.1\%$ error rate), whereas BERT reduced this by **$65.66\%$** down to $34$ ($7.9\%$ error rate).
+- **Critical False Positive Reduction:** In automated customer support triage, a False Positive misclassifies an angry/churn-risk customer as positive. TF-IDF made $76$ False Positives ($17.8\%$ error rate), whereas BERT reduced this by **$55.26\%$** down to $34$ ($7.9\%$ error rate).
 
 ---
 
@@ -151,7 +151,7 @@ Both models and their configuration metadata are saved under [`artifacts/`](arti
 | Component | Storage Path | Key Files & Artifacts | Purpose |
 | :--- | :--- | :--- | :--- |
 | **Fine-Tuned BERT** | `artifacts/bert/` | `config.json`, `model.safetensors` (417.67 MB), `tokenizer.json`, `tokenizer_config.json` | 110M parameter sequence classifier with subword tokenization and explicit binary label mappings (`0: NEGATIVE`, `1: POSITIVE`). |
-| **TF-IDF Baseline** | `artifacts/tfidf/` | `tfidf_logistic_regression.joblib` (455.83 KB) | Scikit-learn `Pipeline` encapsulating fitted `TfidfVectorizer(ngram_range=(1,2), max_features=10000)` and `LogisticRegression(C=1.0)`. |
+| **TF-IDF Baseline** | `artifacts/tfidf/` | `tfidf_logistic_regression.joblib` (932.96 KB) | Scikit-learn `Pipeline` encapsulating fitted `TfidfVectorizer(ngram_range=(1,2), max_features=20000, sublinear_tf=True)` and `LogisticRegression(C=1.0, class_weight="balanced")`. |
 | **Model Metadata** | `artifacts/` | `model_metadata.json` | Full experiment provenance, architecture dimensions, hyperparams, library versions, git commit, and validation metrics. |
 
 > [!SECURITY]

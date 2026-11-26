@@ -28,10 +28,11 @@ export default function ModelPage() {
   ];
 
   const baselineSpecs = [
-    { label: "Baseline Model", value: "TF-IDF + Logistic Regression (L2 Regularization via scikit-learn)" },
-    { label: "Feature Extraction", value: "TF-IDF Vectorizer (Term Frequency × Inverse Document Frequency)" },
+    { label: "Baseline Model", value: "TF-IDF + Logistic Regression (L2, class_weight=balanced)" },
+    { label: "Feature Extraction", value: "TF-IDF Vectorizer (sublinear_tf=True, L2 norm)" },
     { label: "N-gram Range", value: "(1, 2) Unigrams & Bigrams" },
-    { label: "Max Features", value: "10,000 vocabulary features" },
+    { label: "Max Features", value: "20,000 vocabulary features" },
+    { label: "Target Labels", value: "0 = Negative, 1 = Positive" },
     { label: "Hardware Footprint", value: "< 20MB memory, zero GPU requirement" },
   ];
 

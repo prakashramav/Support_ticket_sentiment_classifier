@@ -61,7 +61,7 @@ export default function PerformancePreviewSection() {
                     Overall Accuracy
                   </span>
                   <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400">
-                    +11.58% &Delta;
+                    +10.32% &Delta;
                   </span>
                 </div>
 
@@ -85,10 +85,10 @@ export default function PerformancePreviewSection() {
                       <span className="font-bold text-slate-700 dark:text-slate-300">
                         TF-IDF + Logistic Regression
                       </span>
-                      <span className="font-mono font-bold text-slate-600 dark:text-slate-400">81.31%</span>
+                      <span className="font-mono font-bold text-slate-600 dark:text-slate-400">82.57%</span>
                     </div>
                     <div className="mt-1.5 h-2.5 w-full rounded-full bg-slate-200 dark:bg-slate-800 overflow-hidden">
-                      <div className="h-full rounded-full bg-slate-400 dark:bg-slate-500" style={{ width: "81.31%" }} />
+                      <div className="h-full rounded-full bg-slate-400 dark:bg-slate-500" style={{ width: "82.57%" }} />
                     </div>
                   </div>
                 </div>
@@ -98,10 +98,10 @@ export default function PerformancePreviewSection() {
               <div className="rounded-2xl border border-slate-200/80 bg-slate-50/50 p-5 dark:border-slate-800 dark:bg-slate-950/50">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                    Macro F1-Score
+                    Positive F1-Score
                   </span>
                   <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400">
-                    +10.72% &Delta;
+                    +10.18% &Delta;
                   </span>
                 </div>
 
@@ -125,10 +125,10 @@ export default function PerformancePreviewSection() {
                       <span className="font-bold text-slate-700 dark:text-slate-300">
                         TF-IDF + Logistic Regression
                       </span>
-                      <span className="font-mono font-bold text-slate-600 dark:text-slate-400">82.34%</span>
+                      <span className="font-mono font-bold text-slate-600 dark:text-slate-400">82.88%</span>
                     </div>
                     <div className="mt-1.5 h-2.5 w-full rounded-full bg-slate-200 dark:bg-slate-800 overflow-hidden">
-                      <div className="h-full rounded-full bg-slate-400 dark:bg-slate-500" style={{ width: "82.34%" }} />
+                      <div className="h-full rounded-full bg-slate-400 dark:bg-slate-500" style={{ width: "82.88%" }} />
                     </div>
                   </div>
                 </div>

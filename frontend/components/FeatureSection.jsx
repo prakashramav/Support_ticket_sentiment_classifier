@@ -23,7 +23,7 @@ export default function FeatureSection() {
     {
       title: "TF-IDF Baseline",
       description:
-        "Traditional TF-IDF + Linear SVM pipeline for model comparison.",
+        "Traditional TF-IDF + Logistic Regression pipeline for model comparison.",
       icon: Binary,
       href: "/analyze",
       color: "text-purple-600 dark:text-purple-400",

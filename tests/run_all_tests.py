@@ -14,6 +14,10 @@ if str(PROJECT_ROOT) not in sys.path:
 from tests.test_evaluation import TestEvaluation
 from tests.test_api import TestAPIEndpoints
 from tests.test_model_loader import TestModelLoader
+from tests.test_sentiment_regression import (
+    TestSentimentRegression,
+    TestAPIFailureTransparency,
+)
 
 
 def run_tests():
@@ -28,6 +32,8 @@ def run_tests():
     suite.addTests(loader.loadTestsFromTestCase(TestEvaluation))
     suite.addTests(loader.loadTestsFromTestCase(TestModelLoader))
     suite.addTests(loader.loadTestsFromTestCase(TestAPIEndpoints))
+    suite.addTests(loader.loadTestsFromTestCase(TestSentimentRegression))
+    suite.addTests(loader.loadTestsFromTestCase(TestAPIFailureTransparency))
 
     runner = unittest.TextTestRunner(verbosity=2)
     result = runner.run(suite)

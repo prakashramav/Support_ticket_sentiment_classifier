@@ -31,9 +31,9 @@ export default function TechStrip() {
       color: "from-purple-500 to-pink-600",
     },
     {
-      name: "Linear SVM",
+      name: "Logistic Reg.",
       category: "Baseline Model",
-      description: "scikit-learn Support Vector",
+      description: "scikit-learn L2 Linear Model",
       icon: Layers,
       color: "from-rose-500 to-red-600",
     },

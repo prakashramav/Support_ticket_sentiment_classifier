@@ -87,7 +87,7 @@ export default function HeroSection() {
               <span className="hidden sm:inline text-slate-300 dark:text-slate-700">•</span>
               <div className="flex items-center gap-1.5">
                 <CheckCircle2 className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
-                <span>TF-IDF + Linear SVM Baseline</span>
+                <span>TF-IDF + Logistic Regression Baseline</span>
               </div>
               <span className="hidden sm:inline text-slate-300 dark:text-slate-700">•</span>
               <div className="flex items-center gap-1.5">

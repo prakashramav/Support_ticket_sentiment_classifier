@@ -22,8 +22,8 @@ export default function PerformancePage() {
       metric: "Overall Accuracy",
       description: "Proportion of total validation sentences correctly classified.",
       bert: "92.89%",
-      tfidf: "81.31%",
-      delta: "+11.58%",
+      tfidf: "82.57%",
+      delta: "+10.32%",
       superior: "BERT",
       status: "Verified (GLUE SST-2 split)",
     },
@@ -31,8 +31,8 @@ export default function PerformancePage() {
       metric: "Positive Precision",
       description: "Reliability when predicting positive sentiment (P(True Pos | Predicted Pos)).",
       bert: "92.44%",
-      tfidf: "79.33%",
-      delta: "+13.11%",
+      tfidf: "82.88%",
+      delta: "+9.56%",
       superior: "BERT",
       status: "Verified (GLUE SST-2 split)",
     },
@@ -40,17 +40,17 @@ export default function PerformancePage() {
       metric: "Positive Recall",
       description: "Ability to retrieve all true positive customer satisfaction instances.",
       bert: "93.69%",
-      tfidf: "85.59%",
-      delta: "+8.10%",
+      tfidf: "82.88%",
+      delta: "+10.81%",
       superior: "BERT",
       status: "Verified (GLUE SST-2 split)",
     },
     {
-      metric: "Macro F1-Score",
-      description: "Harmonic mean of precision and recall averaged across both classes.",
+      metric: "Positive F1-Score",
+      description: "Harmonic mean of precision and recall on positive class predictions.",
       bert: "93.06%",
-      tfidf: "82.34%",
-      delta: "+10.72%",
+      tfidf: "82.88%",
+      delta: "+10.18%",
       superior: "BERT",
       status: "Verified (GLUE SST-2 split)",
     },
@@ -58,8 +58,8 @@ export default function PerformancePage() {
       metric: "Specificity (Negative TNR)",
       description: "Ability to correctly identify genuine negative support issues and complaints.",
       bert: "92.06%",
-      tfidf: "76.87%",
-      delta: "+15.19%",
+      tfidf: "82.24%",
+      delta: "+9.82%",
       superior: "BERT",
       status: "Verified (GLUE SST-2 split)",
     },
@@ -67,8 +67,8 @@ export default function PerformancePage() {
       metric: "Negative Predictive Value",
       description: "Reliability when a ticket is flagged as negative (P(True Neg | Predicted Neg)).",
       bert: "93.36%",
-      tfidf: "83.72%",
-      delta: "+9.64%",
+      tfidf: "82.24%",
+      delta: "+11.12%",
       superior: "BERT",
       status: "Verified (GLUE SST-2 split)",
     },
@@ -76,17 +76,17 @@ export default function PerformancePage() {
       metric: "False Positive Rate (FPR)",
       description: "Rate of mislabeling critical negative complaints as positive (lower is better).",
       bert: "7.94%",
-      tfidf: "23.13%",
-      delta: "-15.19%",
-      superior: "BERT (65.7% fewer FP)",
+      tfidf: "17.76%",
+      delta: "-9.82%",
+      superior: "BERT (55.3% fewer FP)",
       status: "Verified (GLUE SST-2 split)",
     },
     {
       metric: "Single-Sample Latency",
       description: "Per-request inference latency measured on GPU (CUDA) vs lightweight CPU.",
-      bert: "11.2 ms (CUDA) / 38 ms (CPU)",
-      tfidf: "1.2 ms (CPU)",
-      delta: "TF-IDF is 9.3x faster",
+      bert: "12.19 ms (CUDA) / 44.48 ms (CPU)",
+      tfidf: "0.74 ms (CPU)",
+      delta: "TF-IDF is ~16.5x faster (vs GPU)",
       superior: "TF-IDF (Speed)",
       status: "Measured via perf_counter",
     },
@@ -101,10 +101,10 @@ export default function PerformancePage() {
       total: 872,
     },
     tfidf: {
-      tp: 380,
-      tn: 329,
-      fp: 99,
-      fn: 64,
+      tp: 368,
+      tn: 352,
+      fp: 76,
+      fn: 76,
       total: 872,
     },
   };
@@ -286,7 +286,7 @@ export default function PerformancePage() {
                     TF-IDF Confusion Matrix (N = 872)
                   </h3>
                   <span className="text-xs text-slate-500 font-mono">
-                    Accuracy: 81.31% (709/872 correct)
+                    Accuracy: 82.57% (720/872 correct)
                   </span>
                 </div>
               </div>
@@ -298,28 +298,28 @@ export default function PerformancePage() {
             <div className="mt-6 grid grid-cols-2 gap-4">
               <div className="rounded-2xl border border-emerald-200 bg-emerald-50/50 p-4 text-center dark:border-emerald-900/50 dark:bg-emerald-950/20">
                 <span className="text-xs font-medium text-emerald-700 dark:text-emerald-300">True Negatives (TN)</span>
-                <p className="mt-1 text-2xl font-extrabold text-emerald-900 dark:text-emerald-200 font-mono">329</p>
+                <p className="mt-1 text-2xl font-extrabold text-emerald-900 dark:text-emerald-200 font-mono">352</p>
                 <span className="text-[11px] text-slate-500">Correctly caught complaints</span>
               </div>
               <div className="rounded-2xl border border-rose-200 bg-rose-50/50 p-4 text-center dark:border-rose-900/50 dark:bg-rose-950/20">
                 <span className="text-xs font-medium text-rose-700 dark:text-rose-300">False Positives (FP)</span>
-                <p className="mt-1 text-2xl font-extrabold text-rose-900 dark:text-rose-200 font-mono">99</p>
+                <p className="mt-1 text-2xl font-extrabold text-rose-900 dark:text-rose-200 font-mono">76</p>
                 <span className="text-[11px] text-slate-500">Misidentified complaints</span>
               </div>
               <div className="rounded-2xl border border-amber-200 bg-amber-50/50 p-4 text-center dark:border-amber-900/50 dark:bg-amber-950/20">
                 <span className="text-xs font-medium text-amber-700 dark:text-amber-300">False Negatives (FN)</span>
-                <p className="mt-1 text-2xl font-extrabold text-amber-900 dark:text-amber-200 font-mono">64</p>
+                <p className="mt-1 text-2xl font-extrabold text-amber-900 dark:text-amber-200 font-mono">76</p>
                 <span className="text-[11px] text-slate-500">Misidentified praise</span>
               </div>
               <div className="rounded-2xl border border-indigo-200 bg-indigo-50/50 p-4 text-center dark:border-indigo-900/50 dark:bg-indigo-950/20">
                 <span className="text-xs font-medium text-indigo-700 dark:text-indigo-300">True Positives (TP)</span>
-                <p className="mt-1 text-2xl font-extrabold text-indigo-900 dark:text-indigo-200 font-mono">380</p>
+                <p className="mt-1 text-2xl font-extrabold text-indigo-900 dark:text-indigo-200 font-mono">368</p>
                 <span className="text-[11px] text-slate-500">Correctly caught praise</span>
               </div>
             </div>
 
             <div className="mt-5 rounded-xl bg-slate-50 p-3 text-xs text-slate-600 dark:bg-slate-800/60 dark:text-slate-300">
-              <strong>Support Impact:</strong> TF-IDF mislabels 99 negative tickets as positive (23.13% FPR), nearly 3x the false alarm rate of BERT due to lack of negation context.
+              <strong>Support Impact:</strong> TF-IDF mislabels 76 negative tickets as positive (17.76% FPR), over 2.2x the false alarm rate of BERT due to bag-of-words negation limits.
             </div>
           </div>
         </div>
