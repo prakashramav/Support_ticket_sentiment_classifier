@@ -11,3 +11,5 @@ services:
         value: production
       - key: LOG_LEVEL
         value: info
+      - key: BERT_BACKEND
+        value: onnx

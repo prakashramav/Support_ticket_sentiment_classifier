@@ -484,6 +484,18 @@ export default function AnalyzePage() {
 
             {result && (model === "tfidf" || model === "both") &&
               renderModelCard(result.tfidf, "TF-IDF + Logistic Regression Output", Binary, "slate")}
+
+            {result &&
+              model === "both" &&
+              result.bert &&
+              result.tfidf &&
+              !result.bert.unavailable &&
+              !result.tfidf.unavailable &&
+              result.bert.sentiment !== result.tfidf.sentiment && (
+                <div className="rounded-2xl border border-indigo-200/80 bg-indigo-50/70 p-4 text-xs text-indigo-950 dark:border-indigo-900/60 dark:bg-indigo-950/30 dark:text-indigo-200 leading-relaxed">
+                  <strong>Why Models Disagreed:</strong> BERT evaluates full sentence context and negations, whereas TF-IDF sums isolated SST-2 movie-review n-gram weights and can misread negated phrases or out-of-domain support terms.
+                </div>
+              )}
           </div>
         </div>
       </div>

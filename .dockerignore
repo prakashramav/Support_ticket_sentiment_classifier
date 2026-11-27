@@ -1,0 +1,13 @@
+.git
+.venv
+venv
+frontend
+data
+models
+docs
+tests
+*.safetensors
+*.pt
+*.bin
+__pycache__
+.pytest_cache

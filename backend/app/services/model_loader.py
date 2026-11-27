@@ -3,7 +3,10 @@ Production Model Loading & Inference Utility
 Support-Ticket Sentiment Classifier
 
 Provides production-ready loaders and inference services for:
-1. Fine-tuned BERT model and tokenizer (from artifacts/bert/).
+1. Fine-tuned BERT model and tokenizer (from artifacts/bert/):
+   - Uses PyTorch + Hugging Face Transformers (CUDA/CPU) when torch + model.safetensors are present.
+   - Automatically uses ONNX Runtime INT8 (model_int8.onnx / model_int8.onnx.xz) when running in
+     PyTorch-free or 512MB RAM cloud environments (such as Render free tier).
 2. Fitted TF-IDF + Logistic Regression baseline pipeline (from artifacts/tfidf/).
 
 Security Notice:
@@ -12,31 +15,46 @@ Scikit-learn / joblib serialization relies on Python's pickle protocol.
 Loading joblib files from untrusted or unauthenticated sources can result
 in arbitrary code execution. ONLY load joblib artifacts from trusted,
 cryptographically verified, or local storage.
-
-Architecture:
--------------
-- Loads models ONCE during application startup (singleton pattern).
-- Independently tracks BERT and TF-IDF readiness (never allows one failure to mask the other).
-- Uses torch.inference_mode() for optimized, low-overhead tensor execution.
-- Validates explicit class/label mappings (id2label and classes_) to guarantee probability alignment.
-- Distinguishes raw model probability from post-hoc temperature-scaled calibrated confidence.
-- Rejects empty, whitespace-only, or non-alphanumeric inputs rather than returning biased priors.
-- NEVER falls back to an untrained model or toy keyword heuristics.
 """
+
+from __future__ import annotations
 
 import json
 import logging
+import lzma
 import os
+import tempfile
 import time
 from pathlib import Path
+from types import SimpleNamespace
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 import joblib
 import numpy as np
-import torch
-import torch.nn.functional as F
 from sklearn.pipeline import Pipeline
-from transformers import AutoModelForSequenceClassification, AutoTokenizer
+
+try:
+    import torch
+    import torch.nn.functional as F
+    from transformers import AutoModelForSequenceClassification, AutoTokenizer
+
+    PYTORCH_AVAILABLE = True
+except ImportError:
+    torch = None
+    F = None
+    AutoModelForSequenceClassification = None
+    AutoTokenizer = None
+    PYTORCH_AVAILABLE = False
+
+try:
+    import onnxruntime as ort
+    from tokenizers import Tokenizer as FastTokenizer
+
+    ONNX_AVAILABLE = True
+except ImportError:
+    ort = None
+    FastTokenizer = None
+    ONNX_AVAILABLE = False
 
 logger = logging.getLogger("sentiment_classifier.model_loader")
 
@@ -59,6 +77,14 @@ DEFAULT_METADATA_PATH = PROJECT_ROOT / "artifacts" / "model_metadata.json"
 DEFAULT_BERT_TEMPERATURE = 1.6650
 EXPECTED_BINARY_LABELS = {"NEGATIVE", "POSITIVE"}
 MAX_TEXT_LENGTH = 5000
+
+
+def _softmax_np(logits: np.ndarray, temperature: float = 1.0) -> np.ndarray:
+    """Numerically stable numpy softmax with optional temperature scaling."""
+    scaled = np.asarray(logits, dtype=np.float64) / float(temperature)
+    shifted = scaled - np.max(scaled, axis=-1, keepdims=True)
+    exp_vals = np.exp(shifted)
+    return exp_vals / np.sum(exp_vals, axis=-1, keepdims=True)
 
 
 def _load_default_temperature() -> float:
@@ -177,74 +203,218 @@ def _compute_confidence_band(calibrated_confidence: float) -> str:
     return "LOW"
 
 
+class _OnnxCpuDevice:
+    """Minimal device descriptor compatible with `.type` and `str(device)` checks."""
+
+    type: str = "cpu"
+
+    def __str__(self) -> str:
+        return "cpu"
+
+    def __repr__(self) -> str:
+        return "device(type='cpu')"
+
+
+class OnnxTokenizerWrapper:
+    """Lightweight tokenizer wrapper around Hugging Face fast `tokenizers.Tokenizer` JSON."""
+
+    def __init__(self, tokenizer_json_path: Path):
+        if not ONNX_AVAILABLE:
+            raise ImportError("tokenizers package is required for ONNX BERT tokenization.")
+        self._raw_tok = FastTokenizer.from_file(str(tokenizer_json_path))
+        self._sub_tok = FastTokenizer.from_file(str(tokenizer_json_path))
+        self._sub_tok.no_truncation()
+
+    def tokenize(self, text: str) -> List[str]:
+        enc = self._sub_tok.encode(text, add_special_tokens=False)
+        return list(enc.tokens)
+
+    def encode_numpy(self, text: str, max_length: int = 128) -> Dict[str, np.ndarray]:
+        self._raw_tok.enable_truncation(max_length=max_length)
+        enc = self._raw_tok.encode(text, add_special_tokens=True)
+        return {
+            "input_ids": np.array([enc.ids], dtype=np.int64),
+            "attention_mask": np.array([enc.attention_mask], dtype=np.int64),
+            "token_type_ids": np.array([enc.type_ids], dtype=np.int64),
+        }
+
+
+class OnnxBertModel:
+    """Lightweight ONNX Runtime wrapper exposing config, training=False, and logits inference."""
+
+    def __init__(self, onnx_path: Path, config_data: Dict[str, Any]):
+        if not ONNX_AVAILABLE:
+            raise ImportError("onnxruntime package is required for ONNX BERT inference.")
+        opts = ort.SessionOptions()
+        opts.inter_op_num_threads = 1
+        opts.intra_op_num_threads = int(os.getenv("ORT_INTRA_OP_THREADS", "2"))
+        self.session = ort.InferenceSession(
+            str(onnx_path),
+            sess_options=opts,
+            providers=["CPUExecutionProvider"],
+        )
+        self.config = SimpleNamespace(**config_data)
+        self.training = False
+        self.is_onnx = True
+
+    def predict_logits(self, encoded_inputs: Dict[str, np.ndarray]) -> np.ndarray:
+        feed = {
+            name: encoded_inputs[name]
+            for name in ("input_ids", "attention_mask", "token_type_ids")
+            if name in encoded_inputs
+        }
+        return self.session.run(["logits"], feed)[0]
+
+
+def _ensure_onnx_extracted(onnx_path: Path, xz_path: Path) -> Path:
+    """Ensures uncompressed ONNX weights exist on disk, extracting cleanly from .xz if needed."""
+    if onnx_path.exists() and onnx_path.stat().st_size > 0:
+        return onnx_path
+
+    if not xz_path.exists():
+        raise FileNotFoundError(
+            f"[ModelLoader] Neither {onnx_path.name} nor {xz_path.name} exists in {onnx_path.parent}"
+        )
+
+    logger.info(f"Extracting compressed ONNX BERT weights from {xz_path.name}...")
+    t0 = time.perf_counter()
+    with lzma.open(xz_path, "rb") as src:
+        raw_bytes = src.read()
+
+    # Atomic write into same directory (or temp dir if filesystem is read-only)
+    target_dir = onnx_path.parent
+    try:
+        fd, tmp_name = tempfile.mkstemp(dir=str(target_dir), prefix=".tmp_bert_", suffix=".onnx")
+        try:
+            with os.fdopen(fd, "wb") as dst:
+                dst.write(raw_bytes)
+            os.replace(tmp_name, onnx_path)
+            dest_path = onnx_path
+        except Exception:
+            if os.path.exists(tmp_name):
+                os.remove(tmp_name)
+            raise
+    except OSError:
+        fallback_path = Path(tempfile.gettempdir()) / "model_int8.onnx"
+        with open(fallback_path, "wb") as dst:
+            dst.write(raw_bytes)
+        dest_path = fallback_path
+
+    logger.info(f"Extracted ONNX BERT weights ({len(raw_bytes) / (1024**2):.1f} MB) in {(time.perf_counter() - t0):.2f}s.")
+    return dest_path
+
+
 def load_bert_model(
     model_dir: Optional[Union[str, Path]] = None,
-    device: Optional[torch.device] = None,
-) -> Tuple[AutoTokenizer, AutoModelForSequenceClassification, torch.device]:
+    device: Optional[Any] = None,
+    backend: Optional[str] = None,
+) -> Tuple[Any, Any, Any]:
     """
-    Loads fine-tuned BERT model and its matching tokenizer from local disk or optional BERT_HF_REPO.
+    Loads fine-tuned BERT model and matching tokenizer from local artifacts (or BERT_HF_REPO).
+
+    Supports:
+    - PyTorch + Transformers backend (uses artifacts/bert/model.safetensors on CUDA or CPU)
+    - Lightweight ONNX Runtime INT8 backend (uses artifacts/bert/model_int8.onnx[.xz] on CPU)
 
     Args:
-        model_dir: Path to directory containing config.json, model.safetensors, and tokenizer files.
-        device: Target torch device (cuda / cpu). If None, auto-detected.
-
-    Returns:
-        Tuple of (tokenizer, model, active_device)
-
-    Raises:
-        FileNotFoundError: If neither valid local weights nor BERT_HF_REPO are available.
-        ValueError: If loaded model config has invalid id2label mapping.
+        model_dir: Directory containing BERT artifacts.
+        device: Optional target device for PyTorch ('cuda'/'cpu' or torch.device).
+        backend: 'auto' (default), 'pytorch', or 'onnx'.
     """
     path = Path(model_dir) if model_dir else DEFAULT_BERT_DIR
+    requested_backend = (backend or os.getenv("BERT_BACKEND", "auto")).strip().lower()
     hf_repo = os.getenv("BERT_HF_REPO", "").strip()
 
-    has_local_weights = (
-        path.exists()
-        and (path / "config.json").exists()
-        and ((path / "model.safetensors").exists() or (path / "pytorch_model.bin").exists())
-    )
+    config_file = path / "config.json"
+    has_pytorch_weights = (path / "model.safetensors").exists() or (path / "pytorch_model.bin").exists()
+    onnx_file = path / "model_int8.onnx"
+    onnx_xz_file = path / "model_int8.onnx.xz"
+    has_onnx_weights = onnx_file.exists() or onnx_xz_file.exists()
 
-    if not has_local_weights:
-        if hf_repo and model_dir is None:
-            source_id = hf_repo
-            logger.info(f"Local BERT weights absent at {path}; loading from BERT_HF_REPO={hf_repo}...")
-        else:
-            if not path.exists():
-                raise FileNotFoundError(
-                    f"[ModelLoader] BERT artifact directory does not exist: {path.resolve()}. "
-                    "Please ensure artifacts/bert is populated with the fine-tuned model before starting the service."
-                )
-            if not (path / "config.json").exists():
-                raise FileNotFoundError(
-                    f"[ModelLoader] Missing config.json in BERT directory: {path.resolve()}"
-                )
-            raise FileNotFoundError(
-                f"[ModelLoader] No model weights (model.safetensors or pytorch_model.bin) found in {path.resolve()}"
-            )
+    if not path.exists() and not (hf_repo and model_dir is None):
+        raise FileNotFoundError(
+            f"[ModelLoader] BERT artifact directory does not exist: {path.resolve()}. "
+            "Please ensure artifacts/bert is populated before starting the service."
+        )
+
+    if path.exists() and not config_file.exists() and not (hf_repo and model_dir is None):
+        raise FileNotFoundError(
+            f"[ModelLoader] Missing config.json in BERT directory: {path.resolve()}"
+        )
+
+    # Decide runtime engine
+    use_pytorch = False
+    if requested_backend == "pytorch":
+        if not PYTORCH_AVAILABLE:
+            raise RuntimeError("[ModelLoader] BERT_BACKEND='pytorch' requested, but torch/transformers is not installed.")
+        use_pytorch = True
+    elif requested_backend == "onnx":
+        if not ONNX_AVAILABLE:
+            raise RuntimeError("[ModelLoader] BERT_BACKEND='onnx' requested, but onnxruntime/tokenizers is not installed.")
+        use_pytorch = False
     else:
-        source_id = str(path)
+        # 'auto': prefer PyTorch locally when torch + weights exist; otherwise use ONNX INT8
+        if PYTORCH_AVAILABLE and (has_pytorch_weights or (hf_repo and model_dir is None)):
+            use_pytorch = True
+        elif ONNX_AVAILABLE and has_onnx_weights:
+            use_pytorch = False
+        elif PYTORCH_AVAILABLE:
+            use_pytorch = True  # will raise clean FileNotFoundError below if weights missing
 
-    if device is None:
-        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    if use_pytorch:
+        source_id = str(path) if (has_pytorch_weights or not (hf_repo and model_dir is None)) else hf_repo
+        if not has_pytorch_weights and not (hf_repo and model_dir is None):
+            raise FileNotFoundError(
+                f"[ModelLoader] No model weights (model.safetensors, pytorch_model.bin, or model_int8.onnx) found in {path.resolve()}"
+            )
 
-    logger.info(f"Loading BERT tokenizer and model from {source_id} onto {device}...")
+        if device is None:
+            resolved_device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        elif isinstance(device, str):
+            resolved_device = torch.device(device)
+        else:
+            resolved_device = device
+
+        logger.info(f"Loading BERT tokenizer and PyTorch model from {source_id} onto {resolved_device}...")
+        t0 = time.perf_counter()
+
+        tokenizer = AutoTokenizer.from_pretrained(source_id)
+        model = AutoModelForSequenceClassification.from_pretrained(source_id)
+        _normalize_bert_id2label(model.config)
+
+        model.to(resolved_device)
+        model.eval()
+        if resolved_device.type == "cuda":
+            torch.cuda.synchronize()
+
+        logger.info(f"BERT (PyTorch) loaded onto {resolved_device} in {(time.perf_counter() - t0) * 1000.0:.2f} ms.")
+        return tokenizer, model, resolved_device
+
+    # Lightweight ONNX Runtime INT8 path
+    if not ONNX_AVAILABLE:
+        raise FileNotFoundError(
+            f"[ModelLoader] Neither PyTorch weights nor ONNX Runtime are available for {path.resolve()}"
+        )
+    if not has_onnx_weights:
+        raise FileNotFoundError(
+            f"[ModelLoader] No model weights (model.safetensors, pytorch_model.bin, or model_int8.onnx[.xz]) found in {path.resolve()}"
+        )
+    tokenizer_json = path / "tokenizer.json"
+    if not tokenizer_json.exists():
+        raise FileNotFoundError(f"[ModelLoader] Missing tokenizer.json in {path.resolve()}")
+
+    with open(config_file, "r", encoding="utf-8") as f:
+        config_data = json.load(f)
+
     t0 = time.perf_counter()
-
-    tokenizer = AutoTokenizer.from_pretrained(source_id)
-    model = AutoModelForSequenceClassification.from_pretrained(source_id)
-
-    # Validate explicit binary label mapping on startup
+    resolved_onnx = _ensure_onnx_extracted(onnx_file, onnx_xz_file)
+    tokenizer = OnnxTokenizerWrapper(tokenizer_json)
+    model = OnnxBertModel(resolved_onnx, config_data)
     _normalize_bert_id2label(model.config)
+    onnx_device = _OnnxCpuDevice()
 
-    model.to(device)
-    model.eval()
-    if device.type == "cuda":
-        torch.cuda.synchronize()
-
-    load_time_ms = (time.perf_counter() - t0) * 1000.0
-    logger.info(f"BERT loaded successfully onto {device} in {load_time_ms:.2f} ms.")
-
-    return tokenizer, model, device
+    logger.info(f"BERT (ONNX INT8) loaded onto CPU in {(time.perf_counter() - t0) * 1000.0:.2f} ms.")
+    return tokenizer, model, onnx_device
 
 
 def load_tfidf_pipeline(
@@ -295,19 +465,22 @@ class ModelService:
         self,
         bert_dir: Optional[Union[str, Path]] = None,
         tfidf_path: Optional[Union[str, Path]] = None,
-        device: Optional[torch.device] = None,
+        device: Optional[Any] = None,
         lazy: bool = False,
         strict: bool = False,
         bert_temperature: Optional[float] = None,
+        bert_backend: Optional[str] = None,
     ):
         self.bert_dir = bert_dir
         self.tfidf_path = tfidf_path
         self.device = device
+        self.bert_backend = bert_backend
 
-        self.tokenizer: Optional[AutoTokenizer] = None
-        self.bert_model: Optional[AutoModelForSequenceClassification] = None
+        self.tokenizer: Optional[Any] = None
+        self.bert_model: Optional[Any] = None
         self.bert_id2label: Optional[Dict[int, str]] = None
-        self.active_device: Optional[torch.device] = None
+        self.active_device: Optional[Any] = None
+        self.bert_runtime: Optional[str] = None
         self.bert_error: Optional[str] = None
 
         self.tfidf_pipeline: Optional[Pipeline] = None
@@ -330,14 +503,16 @@ class ModelService:
         """
         try:
             self.tokenizer, self.bert_model, self.active_device = load_bert_model(
-                self.bert_dir, self.device
+                self.bert_dir, self.device, backend=self.bert_backend
             )
             self.bert_id2label = _normalize_bert_id2label(self.bert_model.config)
+            self.bert_runtime = "onnx-int8" if getattr(self.bert_model, "is_onnx", False) else "pytorch"
             self.bert_error = None
         except Exception as exc:
             self.tokenizer = None
             self.bert_model = None
             self.bert_id2label = None
+            self.bert_runtime = None
             self.bert_error = str(exc)
             logger.error(f"Failed to load BERT model: {exc}")
             if strict:
@@ -373,6 +548,7 @@ class ModelService:
 
         return {
             "bert_loaded": self.bert_model is not None,
+            "bert_runtime": self.bert_runtime,
             "bert_error": self.bert_error,
             "bert_id2label": {str(k): v for k, v in self.bert_id2label.items()} if self.bert_id2label else None,
             "bert_temperature": round(self.bert_temperature, 4),
@@ -385,7 +561,7 @@ class ModelService:
 
     def predict_bert(self, text: str, max_length: int = 128) -> Dict[str, Any]:
         """
-        Runs sentiment classification using the fine-tuned BERT model.
+        Runs sentiment classification using the fine-tuned BERT model (PyTorch or ONNX INT8).
         Exposes both raw softmax probability and temperature-scaled calibrated confidence,
         along with raw predicted class ID and logits for full transparency.
         """
@@ -398,35 +574,43 @@ class ModelService:
 
         t0 = time.perf_counter()
         full_tokens = self.tokenizer.tokenize(clean_text)
-        inputs = self.tokenizer(
-            clean_text,
-            return_tensors="pt",
-            truncation=True,
-            max_length=max_length,
-            padding=False,
-        )
 
-        # Effective content tokens = len(input_ids[0]) minus [CLS] and [SEP]
-        encoded_len = int(inputs["input_ids"].shape[-1])
-        is_truncated = len(full_tokens) > max(encoded_len - 2, 0)
+        if getattr(self.bert_model, "is_onnx", False):
+            encoded = self.tokenizer.encode_numpy(clean_text, max_length=max_length)
+            encoded_len = int(encoded["input_ids"].shape[-1])
+            is_truncated = len(full_tokens) > max(encoded_len - 2, 0)
+            logits_np = self.bert_model.predict_logits(encoded)[0]
+            model_display = "BERT Fine-Tuned (bert-base-uncased, INT8 ONNX)"
+            device_label = "CPU"
+        else:
+            inputs = self.tokenizer(
+                clean_text,
+                return_tensors="pt",
+                truncation=True,
+                max_length=max_length,
+                padding=False,
+            )
+            encoded_len = int(inputs["input_ids"].shape[-1])
+            is_truncated = len(full_tokens) > max(encoded_len - 2, 0)
 
-        if self.active_device and self.active_device.type == "cuda":
-            inputs = {k: v.to(self.active_device) for k, v in inputs.items()}
-            torch.cuda.synchronize()
+            if self.active_device and self.active_device.type == "cuda":
+                inputs = {k: v.to(self.active_device) for k, v in inputs.items()}
+                torch.cuda.synchronize()
 
-        with torch.inference_mode():
-            logits = self.bert_model(**inputs).logits
-            raw_probs_t = F.softmax(logits, dim=-1).squeeze(0)
-            cal_probs_t = F.softmax(logits / self.bert_temperature, dim=-1).squeeze(0)
+            with torch.inference_mode():
+                logits = self.bert_model(**inputs).logits
 
-        if self.active_device and self.active_device.type == "cuda":
-            torch.cuda.synchronize()
+            if self.active_device and self.active_device.type == "cuda":
+                torch.cuda.synchronize()
+
+            logits_np = logits.squeeze(0).detach().cpu().numpy()
+            model_display = "BERT Fine-Tuned (bert-base-uncased)"
+            device_label = str(self.active_device).upper() if self.active_device else "CPU"
 
         latency_ms = (time.perf_counter() - t0) * 1000.0
 
-        logits_np = logits.squeeze(0).detach().cpu().numpy()
-        raw_probs = raw_probs_t.detach().cpu().numpy()
-        cal_probs = cal_probs_t.detach().cpu().numpy()
+        raw_probs = _softmax_np(logits_np, temperature=1.0)
+        cal_probs = _softmax_np(logits_np, temperature=self.bert_temperature)
 
         raw_class_id = int(np.argmax(raw_probs))
         raw_label = id2label[raw_class_id]
@@ -463,9 +647,9 @@ class ModelService:
             },
             "isTruncated": is_truncated,
             "source": "live-model",
-            "model": "BERT Fine-Tuned (bert-base-uncased)",
+            "model": model_display,
             "modelKey": "bert",
-            "device": str(self.active_device).upper() if self.active_device else "CPU",
+            "device": device_label,
             "latencyMs": round(latency_ms, 2),
             "tokens": display_tokens,
         }

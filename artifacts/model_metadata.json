@@ -55,6 +55,8 @@
       "artifact_paths": {
         "directory": "artifacts/bert",
         "model_weights": "artifacts/bert/model.safetensors",
+        "onnx_int8_compressed": "artifacts/bert/model_int8.onnx.xz",
+        "onnx_int8_validation_accuracy": 0.9232,
         "config": "artifacts/bert/config.json",
         "tokenizer_config": "artifacts/bert/tokenizer_config.json",
         "tokenizer_file": "artifacts/bert/tokenizer.json"

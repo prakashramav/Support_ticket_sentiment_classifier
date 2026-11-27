@@ -115,6 +115,27 @@ class TestSentimentRegression(unittest.TestCase):
         with self.assertRaises(ValueError):
             self.service.predict("Happy", model_type="invalid_model")
 
+    def test_onnx_int8_runtime_parity(self):
+        onnx_service = ModelService(lazy=False, strict=True, bert_backend="onnx")
+        self.assertEqual(onnx_service.bert_runtime, "onnx-int8")
+        self.assertEqual(str(onnx_service.active_device), "cpu")
+
+        for text in NEGATIVE_EXAMPLES:
+            with self.subTest(onnx_negative=text):
+                res = onnx_service.predict_bert(text)
+                self.assertEqual(res["sentiment"], "NEGATIVE")
+                self.assertEqual(res["rawClassId"], 0)
+                self.assertGreater(res["probabilities"]["NEGATIVE"], res["probabilities"]["POSITIVE"])
+
+        for text in POSITIVE_EXAMPLES + [
+            "I am really happy with the service. Your support team solved my problem quickly."
+        ]:
+            with self.subTest(onnx_positive=text):
+                res = onnx_service.predict_bert(text)
+                self.assertEqual(res["sentiment"], "POSITIVE")
+                self.assertEqual(res["rawClassId"], 1)
+                self.assertGreater(res["probabilities"]["POSITIVE"], res["probabilities"]["NEGATIVE"])
+
 
 class TestAPIFailureTransparency(unittest.TestCase):
     def test_api_rejects_punctuation_and_invalid_model(self):
